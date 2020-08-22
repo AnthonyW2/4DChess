@@ -1,0 +1,214 @@
+body {
+  background-color: #101010;
+  color: #eeeeee;
+  font-family: Times New Roman;
+  position: absolute;
+}
+
+/* Move an element up by one line relative to its parent */
+.up1line {
+  position: relative;
+  top: -1em;
+}
+
+
+
+/* Styles for the menus */
+
+/* Styles for the buttons, textboxes and dropdowns */
+.MenuButton {
+  background-color: #bbbbbb;
+  color: #222222;
+  font-family: Times New Roman;
+  font-size: 16px;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 4px 2px;
+  width: 190px;
+  height: 32px;
+}
+
+.MenuTextbox {
+  background-color: #bbbbbb;
+  color: #222222;
+  font-family: Times New Roman;
+  font-size: 16px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 6px;
+  margin: 4px 2px;
+  width: 184px; /* 6px less than the button to account for the border width */
+  height: 24px;
+}
+
+.MenuDropdown {
+  background-color: #bbbbbb;
+  color: #222222;
+  font-family: Times New Roman;
+  font-size: 16px;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 4px 2px;
+  width: 190px;
+  height: 30px;
+}
+
+
+#VersusSubmenu2PL, #VersusSubmenu2PJ, #VersusSubmenu2PC, #VersusSubmenuCPU {
+  position: absolute;
+  left: 250px;
+  width: 80%;
+}
+
+/* Create two columns that float next to each other */
+.MenuColumn {
+  float: left;
+}
+
+/* Clear floats after the columns */
+.MenuRow:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Stack the columns if the screen width is too small */
+@media screen and (max-width: 600px) {
+  .MenuColumn {
+    width: 100%;
+  }
+}
+
+
+
+/* Styles specifically for the game page */
+
+/* Game and titlebar containers */
+#TitleBar {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  z-index: 100;
+  
+  background-color: #181818;
+  color: #eeeeee;
+  font-family: Times New Roman;
+  margin: 0px;
+  border: none;
+  padding: 0px;
+  width: 100%;
+  height: 180px;
+}
+
+#Game {
+  position: absolute;
+  top: 212px;
+  left: 0px;
+  color: #eeeeee;
+  font-family: Times New Roman;
+}
+
+
+/* Styles for the different objects in the game */
+.Field {
+  position: absolute;
+}
+
+.Timeline {
+  position: absolute;
+}
+
+.Board {
+  position: absolute;
+  background-color: #808080;
+  padding: 6px; /* The boardOffset JS variable is used to account for this padding */
+}
+
+.Piece {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+}
+
+.SelectablePiece {
+  cursor: pointer;
+}
+
+
+/* The colored tiles on a board */
+.BoardTile {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+}
+
+/* The colored tiles in the background, to indicate a full 2-player round (1 turn each) */
+.FieldTile {
+  position: absolute;
+}
+
+
+/* Movement visuals that display where a piece can/can't move/capture */
+.MovementVisualAvailable {
+  position: inherit;
+  background-color: #50b050;
+  opacity: 0.4;
+  width: 32px;
+  height: 32px;
+  border: none;
+  cursor: move;
+}
+.MovementVisualAvailable:hover {
+  opacity: 0.75;
+}
+
+.MovementVisualBlocked {
+  position: inherit;
+  background-color: #b05050;
+  opacity: 0.4;
+  width: 32px;
+  height: 32px;
+  border: none;
+  pointer-events: none;
+}
+
+.CaptureVisual {
+  position: inherit;
+  background-color: #5050b0;
+  opacity: 0.4;
+  width: 32px;
+  height: 32px;
+  border: none;
+  cursor: crosshair;
+}
+.CaptureVisual:hover {
+  opacity: 0.75;
+}
+
+
+/*.PastMoveVisual {
+  position: inherit;
+  width: 32px;
+  height: 32px;
+}*/
+
+
+
+/*
+.disablescroll{
+  overflow-y: hidden;
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.enablescrolling{
+  overflow: auto;
+}
+*/

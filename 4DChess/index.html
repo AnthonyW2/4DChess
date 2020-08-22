@@ -1,0 +1,137 @@
+<!--
+Anthony Wilson
+
+24 July 2020
+24/7/20
+
+This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
+While the game concept is not completely ours, this entire site was written from the ground up, so the code is ours.
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>4D Chess</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="main.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="Resources/Favicon64x64.png" sizes="64x64">
+    <link rel="icon" type="image/png" href="Resources/Favicon96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="Resources/Favicon128x128.png" sizes="128x128">
+    <link rel="shortcut icon" type="image/png" href="Resources/Favicon96x96.png">
+    <link rel="apple-touch-icon" href="Resources/TouchIcon256x256.png">
+    
+    <meta name="description" content="This is an open-source game heavily inspired by '5D Chess With Multiverse Time Travel'">
+    
+    <meta property="og:title" content="4D Chess">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://101.188.207.9:8082/4DChess/">
+    <meta property="og:image" content="http://101.188.207.9:8082/4DChess/OpenGraphicsImg.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="256">
+    <meta property="og:image:height" content="256">
+    <meta property="og:description" content="This is an open-source game heavily inspired by '5D Chess With Multiverse Time Travel'">
+  </head>
+  <body class="up1line">
+    <h1>4 Dimensional Chess</h1>
+    <p>This is an open-source game heavily inspired by '5D Chess With Multiverse Time Travel'<br>This is a <b>work in progress</b> (But we're getting super close to a functional system)</p>
+    
+    <!--This is a container for the main menu that will get hidden & replaced by another container when a button is pressed.-->
+    <div id="MainMenu">
+      <h2>Main Menu</h2>
+      <button class="MenuButton" id="VersusBtn" onclick="VersusBtn()">Versus</button><br>
+      <button class="MenuButton" id="PuzzlesBtn" onclick="PuzzlesBtn()">Puzzles</button><br>
+      <button class="MenuButton" id="RulesBtn" onclick="RulesBtn()">Rules</button><br>
+      <button class="MenuButton" id="SettingsBtn" onclick="SettingsBtn()">Settings</button><br>
+      <button class="MenuButton" id="CreditsBtn" onclick="CreditsBtn()">Credits</button>
+    </div>
+    
+    <div id="VersusMenu" class="MenuRow up1line" hidden>
+      <div class="MenuColumn">
+        <h2>Versus</h2>
+        <button class="MenuButton" id="MainMenuBtn" onclick="MainMenu()">Main Menu</button>
+        <br><br>
+        <button class="MenuButton" id="VersusBtn" onclick="VersusBtn2PL()">2 Player Local</button><br>
+        <button class="MenuButton" id="VersusBtn" onclick="VersusBtn2PJ()">2 Player Online (Join)</button><br>
+        <button class="MenuButton" id="VersusBtn" onclick="VersusBtn2PC()">2 Player Online (Create)</button><br>
+        <button class="MenuButton" id="VersusBtn" onclick="VersusBtnCPU()">VS Computer</button>
+      </div>
+      
+      <div class="MenuColumn">
+        <!-- 2 Players Local -->
+        <div id="VersusSubmenu2PL" hidden>
+          <h2>New Local 2 Player Game</h2>
+          <label for="LayoutSelector">Choose starting layout:</label><br>
+          <select class="MenuDropdown" name="LayoutSelector" id="LocalLayoutSelector">
+            <option value="0">8x8 - Standard</option>
+            <option value="1">4x4 - King in the middle</option>
+            <option value="2">4x4 - King in the corner</option>
+            <option value="3">5x5 - Simple (All pieces)</option>
+          </select>
+          <br><br>
+          <button class="MenuButton" id="LocalNewGameBtn" onclick="NewLocalGame()">New Game</button>
+        </div>
+        
+        <!-- 2 Players Online - Join -->
+        <div id="VersusSubmenu2PJ" hidden>
+          <h2>Join Online Game</h2>
+          <h2 id="JoinOnlineStatus"></h2>
+          <label for="JoinOnlineCode">Game ID:</label><br>
+          <input class="MenuTextbox" type="text" id="JoinOnlineCode" maxlength="8" placeholder="abcd1234" value="">
+          <br><br>
+          <div>
+            <input type="radio" id="JoinOnlinePlayerSelectB" name="JoinOnlineColorSelector">
+            <label for="PlayerSelectP2">Black</label><br>
+            <input type="radio" id="JoinOnlinePlayerSelectW" name="JoinOnlineColorSelector">
+            <label for="PlayerSelectP1">White</label><br>
+            <button class="MenuButton" id="JoinBtn" onclick="JoinOnlineGame()">Join Game</button>
+          </div>
+        </div>
+          
+        <!-- 2 Players Online - Create -->
+        <div id="VersusSubmenu2PC" hidden>
+          <h2>New Online 2 Player Game</h2>
+          <h2 id="CreateOnlineStatus"></h2>
+          <label for="CreateOnlineCode">Game ID: (Minimum 8 characters)</label><br>
+          <input class="MenuTextbox" type="text" id="CreateOnlineCode" maxlength="8" placeholder="abcd1234" value="">
+          <br><br>
+          <label for="LayoutSelector">Choose starting layout:</label><br>
+          <select class="MenuDropdown" name="LayoutSelector" id="CreateOnlineLayoutSelector">
+            <option value="0">8x8 - Standard</option>
+            <option value="1">4x4 - King in the middle</option>
+            <option value="2">4x4 - King in the corner</option>
+            <option value="3">5x5 - Simple (All pieces)</option>
+          </select>
+          <br><br>
+          <div>
+            <input type="radio" id="CreateOnlinePlayerSelectB" name="CreateOnlineColorSelector">
+            <label for="PlayerSelectP2">Black</label><br>
+            <input type="radio" id="CreateOnlinePlayerSelectW" name="CreateOnlineColorSelector">
+            <label for="PlayerSelectP1">White</label><br>
+            <button class="MenuButton" id="CreateBtn" onclick="CreateOnlineGame()">Create Game</button>
+          </div>
+        </div>
+        
+        <!-- Versus Computer -->
+        <div id="VersusSubmenuCPU" hidden>
+          <h2>New Game Versus Computer</h2>
+          <p>[Unimplemented]</p>
+        </div>
+      </div>
+    </div>
+    
+    <div id="SettingsMenu" hidden>
+      <h2>Settings</h2>
+      <button class="MenuButton" id="MainMenuBtn" onclick="MainMenu()">Main Menu</button><br>
+      <p>[Settings? Who needs settings?]</p>
+    </div>
+    
+    <div id="RulesMenu" hidden>
+      <h2>Rules</h2>
+      <button class="MenuButton" id="MainMenuBtn" onclick="MainMenu()">Main Menu</button><br>
+      <p>[There's a lot of rules, we're still working on getting them all together]</p>
+    </div>
+  </body>
+</html>
