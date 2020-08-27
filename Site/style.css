@@ -1,8 +1,18 @@
+/*
+Anthony Wilson
+
+Stylesheet for 4D Chess
+*/
+
+
+
+/* Style for the body element */
 body {
+  position: absolute;
   background-color: #101010;
   color: #eeeeee;
-  font-family: Times New Roman;
-  position: absolute;
+  font-family: Georgia;
+  margin: unset;
 }
 
 /* Move an element up by one line relative to its parent */
@@ -59,7 +69,7 @@ body {
   height: 30px;
 }
 
-
+/* Set the positions of the versus submenus */
 #VersusSubmenu2PL, #VersusSubmenu2PJ, #VersusSubmenu2PC, #VersusSubmenuCPU {
   position: absolute;
   left: 250px;
@@ -89,12 +99,38 @@ body {
 
 /* Styles specifically for the game page */
 
+
+/*
+Z-Indexes for the game:
+
+0 - Game
+
+5 - Field
+6 - Field grid tile
+
+10 - Timeline
+11 - Arrow shaft (JS)
+12 - Arrow head (JS)
+
+15 - Board
+16 - Board tile
+17 - Past movement visual (Currently seems to have a z-index bug, they render on top of everything, as if z-index = 1000)
+
+20 - Piece
+
+50 - Movement visuals (Available,Blocked,Capture)
+
+99 - Turn color mask (JS)
+100 - Title bar
+*/
+
+
 /* Game and titlebar containers */
 #TitleBar {
   position: fixed;
+  z-index: 100;
   top: 0px;
   left: 0px;
-  z-index: 100;
   
   background-color: #181818;
   color: #eeeeee;
@@ -108,6 +144,7 @@ body {
 
 #Game {
   position: absolute;
+  z-index: 0;
   top: 212px;
   left: 0px;
   color: #eeeeee;
@@ -118,20 +155,24 @@ body {
 /* Styles for the different objects in the game */
 .Field {
   position: absolute;
+  z-index: 5;
 }
 
 .Timeline {
   position: absolute;
+  z-index: 10;
 }
 
 .Board {
   position: absolute;
+  z-index: 15;
   background-color: #808080;
   padding: 6px; /* The boardOffset JS variable is used to account for this padding */
 }
 
 .Piece {
   position: absolute;
+  z-index: 20;
   width: 32px;
   height: 32px;
 }
@@ -144,6 +185,7 @@ body {
 /* The colored tiles on a board */
 .BoardTile {
   position: absolute;
+  z-index: 16;
   width: 32px;
   height: 32px;
 }
@@ -151,12 +193,14 @@ body {
 /* The colored tiles in the background, to indicate a full 2-player round (1 turn each) */
 .FieldTile {
   position: absolute;
+  z-index: 6;
 }
 
 
 /* Movement visuals that display where a piece can/can't move/capture */
 .MovementVisualAvailable {
-  position: inherit;
+  position: absolute;
+  z-index: 50;
   background-color: #50b050;
   opacity: 0.4;
   width: 32px;
@@ -169,7 +213,8 @@ body {
 }
 
 .MovementVisualBlocked {
-  position: inherit;
+  position: absolute;
+  z-index: 50;
   background-color: #b05050;
   opacity: 0.4;
   width: 32px;
@@ -179,7 +224,8 @@ body {
 }
 
 .CaptureVisual {
-  position: inherit;
+  position: absolute;
+  z-index: 50;
   background-color: #5050b0;
   opacity: 0.4;
   width: 32px;
@@ -191,12 +237,59 @@ body {
   opacity: 0.75;
 }
 
-
-/*.PastMoveVisual {
-  position: inherit;
+/* The orange visuals indication a previous move */
+.PastMoveVisual {
+  position: absolute;
+  z-index: 17;
+  background-color: #eeaa11;
+  opacity: 0.5;
   width: 32px;
   height: 32px;
-}*/
+  pointer-events: none;
+}
+
+
+
+#ImportGamePopup {
+  position: fixed;
+  z-index: 999;
+  
+  background-color: #303030;
+  
+  left: 25vw;
+  top: 25vh;
+  
+  width: 50vw;
+  height: 50vh;
+  
+  /*
+  margin: -10rem;
+  left: 50vw;
+  top: 200px;
+  
+  width: 20rem;
+  height: 20rem;
+  */
+}
+
+#ImportGameTextInput {
+  position: absolute;
+  
+  background-color: #202020;
+  color: #eeeeee;
+  
+  border: none;
+  /*margin: auto;*/
+  
+  width: 90%;
+  height: 50%;
+  
+  left: 5%;
+  top: 40%;
+  
+  font-family: monospace;
+  font-size: 12;
+}
 
 
 

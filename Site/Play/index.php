@@ -80,12 +80,28 @@ While the game concept is not completely ours, this entire site was written from
     <div id="TitleBar">
       <h2 id="MainSubtitle">[Something went wrong. Please make sure javascript is enabled.]</h2>
       <h2 id="ColourSubtitle"></h2>
-      <button class="MenuButton up1line" id="ResetBtn" onclick="resetGame()">Reset Game</button>
-      <div id="Debug" class="up1line">Online multiplayer is nearly finished! [21 August 2020]</div>
+      
+      <button class="MenuButton up1line" id="ResetBtn" onclick="resetGame()">[Debug] Reset Game</button>
+      <button class="MenuButton up1line" id="ExportBtn" onclick="exportGame()">Export Game</button>
+      <button class="MenuButton up1line" id="ImportBtn" onclick="importGame()">Import Game</button>
+      <button class="MenuButton up1line" id="UndoBtn" onclick="undoMove()">Undo Move</button>
+      
+      <div id="Debug" class="up1line">Now re-coding online multiplayer & adding the rest of the time-travel movement [26 August 2020]</div>
+      
+      <a id="DownloadAnchor" href="" target="_blank" hidden style="display:none"></a>
     </div>
     
     <div id="Game">
       <p>Something went wrong.<br>Make sure that javascript is enabled in your browser and allowed on this site and make sure to check your plugins.<br>If the problem persists, send an error ticket <a href="">here</a>.</p>
+    </div>
+    
+    <div id="ImportGamePopup" hidden>
+      <p>Import a game from JSON</p>
+      <input type="file" class="up1line" id="ImportGameFileInput">
+      <button class="MenuButton up1line" onclick="importGame()">Import Game</button>
+      <button class="MenuButton up1line" onclick="cancelImport()">Cancel</button>
+      <br>
+      <textarea id="ImportGameTextInput" placeholder="JSON goes here"></textarea>
     </div>
     
     <!-- Pass PHP variables directly to JavaScript -->
