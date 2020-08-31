@@ -14,8 +14,7 @@
 // Fix online multiplayer POV (specifically for White)
 // Store the dimensions of the board in the simplified object, so that you can't import game saves with differently sized boards
 // !!! Add online multiplayer capturing !!!
-// Add cleanup() method to the Board class to remove holes in the piece array (maybe not)
-// Add castling & make pawn promotion customisable
+// Make pawn promotion customisable
 // Add per-game chat for online multiplayer
 // Fix the title bar (make it collapsable)
 // Add online multiplayer password functionality
@@ -27,7 +26,7 @@
 // ~ 3  - Add "toJSON()" & "fromJSON" functions (for sending / storing the game)
 // ~ 4  - Add "Undo" functionality (by cloning the field) and export/import game functionality
 /// 5  - Add time-travel moves for the rest of the pieces
-// 6  - Rework online multiplayer (send games as JSON, store entire game on server, make the games cheat-resistant, chat)
+/// 6  - Rework online multiplayer (send games as JSON, store entire game on server, make the games cheat-resistant, chat)
 // 7  - First release
 // 8  - Add global & local game settings
 // 9  - Add computer player functionality
@@ -220,8 +219,10 @@ class Field{
         this.timelines[a].clone(fields[cloneid],a);
       }
     }
+    fields[cloneid].render();
   }
   
+  //Change the ID of the field (currently unused)
   changeID(newid){
     if(this.id != newid){
       this.clone(newid);
@@ -231,24 +232,32 @@ class Field{
     }
   }
   
+  //Add a new timeline with a specified ID (tid) to the field
   addTimeline(tid){
     this.timelines[tid] = new Timeline(this,tid);
     
     this.timelines[tid].container.style.top = tid*(boardHeight+1)*32+16-boardOffset+"px";
     this.timelines[tid].container.style.left = 16-boardOffset+"px";
     
-    this.render();
-    
     return this.timelines[tid];
   }
   
+  //Remove a timeline from the field (only used for changing the ID of a timeline)
   removeTimeline(tid){
     this.timelines[tid].container.remove();
     this.timelines[tid] = undefined;
-    
-    this.render();
   }
   
+  //Search for and return the main (starting) timeline
+  getMainTimeline(){
+    for(var a = 0;a < this.timelines.length;a += 1){
+      if(this.timelines[a].boards[0] != undefined){
+        return this.timelines[a];
+      }
+    }
+  }
+  
+  //Render the field grid
   render(){
     this.gridContainer.innerHTML = "";
     
@@ -284,6 +293,22 @@ class Field{
     visual.style.left = (boardWidth+1)*32*bid+x*32+16+"px";
     visual.style.top = (boardHeight+1)*32*tid+y*32+16+"px";
     this.pastMoveContainer.appendChild(visual);
+  }
+  
+  //Refresh all the visuals by removing and re-adding the HTML elements
+  refreshMovementVisuals(){
+    //Clear all the existing movement visual elements
+    this.pastMoveContainer.innerHTML = "";
+    
+    //Loop through the visuals stored in the variable "this.movementVisuals" and re-add an element for each of those
+    for(var a = 0;a < this.movementVisuals.length;a += 1){
+      var visual = document.createElement("div");
+      visual.innerHTML = "";
+      visual.classList.add("PastMoveVisual");
+      visual.style.left = (boardWidth+1)*32*this.movementVisuals[a][1]+this.movementVisuals[a][2]*32+16+"px";
+      visual.style.top = (boardHeight+1)*32*this.movementVisuals[a][0]+this.movementVisuals[a][3]*32+16+"px";
+      this.pastMoveContainer.appendChild(visual);
+    }
   }
   
   //Create a simplified version of the entire current field object (ready to be converted to JSON)
@@ -372,6 +397,8 @@ class Field{
       this.addMovementVisual(obj.movementVisuals[a][0],obj.movementVisuals[a][1],obj.movementVisuals[a][2],obj.movementVisuals[a][3]);
     }
     
+    this.render();
+    
     //Return true on success
     return true;
   }
@@ -433,7 +460,7 @@ class Timeline{
       this.arrow.style.width = this.boards.length*(boardWidth+1)*32+boardOffset+2+"px"; //Add 2 pixels to make sure there's no visible seam between the line and the triangle
       this.arrowtriangle.style.left = this.boards.length*(boardWidth+1)*32+boardOffset+"px";
       
-      this.parent.render();
+      //this.parent.render();
       
       return this.boards[bid];
     }else{
@@ -584,6 +611,13 @@ class Board{
         }
         newtid = 0;
         newTimeline = this.parent.parent.addTimeline(newtid);
+        
+        //Shift all the movement visuals of the parent field down by one timeline
+        var mv = this.parent.parent.movementVisuals;
+        for(var a = 0;a < mv.length;a += 1){
+          mv[a][0] += 1;
+        }
+        this.parent.parent.refreshMovementVisuals();
       }
       
       //Declare all the empty slots of the new timeline as undefined
@@ -896,224 +930,210 @@ function globalDeselect(){
   }
 }
 
-//Add the movePiece() function to the "click" event of a "movement visual" element
-function addMoveListener(mvisual,piece,x,y,board = undefined){
+//Move a specified piece to a new location
+function movePiece(piece,x,y,board = undefined){
   if(board == undefined){
-    mvisual.addEventListener("click", function(){
-      //Deselect the piece before doing anything
-      globalDeselect();
-      
-      //Store the current game state as the previous move
-      storePastMove()
-      
-      //Add the movement visuals
-      piece.parent.parent.parent.addMovementVisual(piece.tid,piece.bid,piece.getX(),piece.getY());
-      piece.parent.parent.parent.addMovementVisual(piece.tid,piece.bid,x,y);
-      
-      //Create a new board when a piece is moved
-      var newboard = piece.parent.extendTimeline();
-      
-      //Confirm that the new board was successfully created
-      if(newboard != undefined){
-        //Move the piece (The one on the new instance of the board, not the original)
-        movePiece(newboard.pieces[piece.id],x,y);
-      }else{
-        throwError("An error occurred when trying to extend the timeline, please contact the system admin");
-      }
-      
-      //If the game is online multiplayer, send the move to the server
-      if(opponent == 1){
-        sendMove(piece,x,y);
-      }
-    });
-  }else{
-    mvisual.addEventListener("click", function(){
-      //Deselect the piece before doing anything
-      globalDeselect();
-      
-      //Store the current game state as the previous move
-      storePastMove()
-      
-      //Add the movement visuals
-      piece.parent.parent.parent.addMovementVisual(piece.tid,piece.bid,piece.getX(),piece.getY());
-      board.parent.parent.addMovementVisual(board.tid,board.id,x,y);
-      
-      //Create a new board and branch the timeline when a piece time travels
-      //Duplicate both the current and the target board
-      var newboard1 = piece.parent.extendTimeline();
-      var newboard2 = board.extendTimeline();
-      
-      //Confirm that the new boards were successfully created
-      if(newboard1 != undefined && newboard2 != undefined){
-        //Move the new instance of the piece to the new timeline
-        movePieceToBoard(newboard1.pieces[piece.id],x,y,newboard2);
-      }else{
-        throwError("An error occurred when trying to extend the timeline, please contact the system admin");
-      }
-      
-      //If the game is online multiplayer, send the move to the server
-      if(opponent == 1){
-        sendMove(piece,x,y);
-      }
-    });
+    board = piece.parent;
   }
-}
-
-//Move a specified piece to a new location (local board)
-function movePiece(piece,x,y){
-  //Update the piece maps
-  piece.parent.pieceTypeMap[piece.getY()][piece.getX()] = 0;
-  piece.parent.pieceIDMap[piece.getY()][piece.getX()] = -1;
-  piece.parent.pieceTypeMap[y][x] = piece.type;
-  piece.parent.pieceIDMap[y][x] = piece.id;
-  
-  //Move the piece to its new position
-  piece.setX(x);
-  piece.setY(y);
-  
-  //Increment the amount of moves a piece has made
-  piece.moveAmount += 1;
   
   //Increment the total amount of moves in the field
   piece.parent.parent.parent.moveAmount += 1;
   
-  //If the piece is a pawn and it has moved to the end of the board, change it into a queen
-  if(piece.type == 7 && ((piece.getY() == boardHeight-1 && piece.color !== playerColor) || (piece.getY() == 0 && piece.color === playerColor))){
-    /// In the future, this should give the player a choice of any normal piece type, instead of automatically choosing the queen
-    piece.type = 3;
-    piece.parent.pieceTypeMap[piece.getX()][piece.getY()] = 3;
-    piece.render();
-  }
-}
-
-//Move a specified piece to a new location (local board)
-function movePieceToBoard(piece,x,y,board){
-  var newpid = board.pieces.length;
-  
-  //Add the piece to its new board
-  var newPiece = board.addPiece(newpid,piece.type,piece.color,x,y);
-  newPiece.moveAmount = piece.moveAmount+1;
-  
-  //Update the piece maps
-  piece.parent.pieceTypeMap[piece.getY()][piece.getX()] = 0;
-  piece.parent.pieceIDMap[piece.getY()][piece.getX()] = -1;
-  board.pieceTypeMap[y][x] = piece.type;
-  board.pieceIDMap[y][x] = newpid;
-  
-  //Remove the previous instance of the piece (using the parent board's removePiece() function)
-  piece.parent.removePiece(piece.id);
-  
-  //Increment the total amount of moves in the field
-  board.parent.parent.moveAmount += 1;
-  
-  /** //If the piece is a pawn and it has moved to the end of the board, change it into a queen
-  if(piece.type == 7 && ((piece.getY() == boardHeight-1 && piece.color !== playerColor) || (piece.getY() == 0 && piece.color === playerColor))){
-    /// In the future, this should give the player a choice of any normal piece type, instead of automatically choosing the queen
-    piece.type = 3;
-    piece.parent.pieceTypeMap[piece.getX()][piece.getY()] = 3;
-    piece.render();
-  }*/
-}
-
-//Add the capturePiece() function to the "click" event of a "capture visual" element
-function addCaptureListener(cvisual,piece1,piece2){
-  cvisual.addEventListener("click", function(){
-    //Deselect the piece before doing anything
-    globalDeselect();
+  if(piece.parent == board){
+    //Update the piece maps
+    piece.parent.pieceTypeMap[piece.getY()][piece.getX()] = 0;
+    piece.parent.pieceIDMap[piece.getY()][piece.getX()] = -1;
+    piece.parent.pieceTypeMap[y][x] = piece.type;
+    piece.parent.pieceIDMap[y][x] = piece.id;
     
-    //Store the current game state as the previous move
-    storePastMove()
+    //Move the piece to its new position
+    piece.setX(x);
+    piece.setY(y);
     
-    //Add the movement visuals
-    piece1.parent.parent.parent.addMovementVisual(piece1.tid,piece1.bid,piece1.getX(),piece1.getY());
-    piece2.parent.parent.parent.addMovementVisual(piece2.tid,piece2.bid,piece2.getX(),piece2.getY());
+    //Increment the amount of moves a piece has made
+    piece.moveAmount += 1;
     
-    //Create a new board when a piece is moved
-    var newboard = piece1.parent.extendTimeline();
-      
-    //Confirm that the new board was successfully created
-    if(newboard != undefined){
-      //Move the piece
-      capturePiece(
-        newboard.pieces[piece1.id],
-        piece2.parent.parent.boards[piece2.parent.parent.boards.length-1].pieces[piece2.id]
-      );
+    //If the piece is a pawn and it has moved to the end of the board, change it into a queen
+    if(piece.type == 7 && ((piece.getY() == boardHeight-1 && piece.color !== playerColor) || (piece.getY() == 0 && piece.color === playerColor))){
+      /// In the future, this should give the player a choice of any normal piece type, instead of automatically choosing the queen
+      piece.type = 3;
+      piece.parent.pieceTypeMap[piece.getX()][piece.getY()] = 3;
+      piece.render();
     }
-  });
-}
-
-//Capture a piece (move piece1 to piece2's location and remove piece2)
-function capturePiece(piece1,piece2){
-  //Check if the captured piece is a king
-  if(piece2.type == 2){
-    win(piece1.color);
+  }else{
+    var newpid = board.pieces.length;
+    
+    //Add the piece to its new board
+    var newPiece = board.addPiece(newpid,piece.type,piece.color,x,y);
+    newPiece.moveAmount = piece.moveAmount+1;
+    
+    //Update the piece maps
+    piece.parent.pieceTypeMap[piece.getY()][piece.getX()] = 0;
+    piece.parent.pieceIDMap[piece.getY()][piece.getX()] = -1;
+    board.pieceTypeMap[y][x] = piece.type;
+    board.pieceIDMap[y][x] = newpid;
+    
+    //Remove the previous instance of the piece (using the parent board's removePiece() function)
+    piece.parent.removePiece(piece.id);
   }
   
-  //Check if the captured piece is on a different board
-  if(piece1.parent == piece2.parent){
-    //Update the piece maps
-    piece2.parent.pieceTypeMap[piece2.getY()][piece2.getX()] = 0;
-    piece2.parent.pieceIDMap[piece2.getY()][piece2.getX()] = -1;
-    
-    //Move the capturing piece to its new position
-    movePiece(piece1,piece2.getX(),piece2.getY());
-    
-    //Remove the captured piece
-    piece2.parent.removePiece(piece2.id);
-  }else{
-    //Update the piece maps
-    piece2.parent.pieceTypeMap[piece2.getY()][piece2.getX()] = 0;
-    piece2.parent.pieceIDMap[piece2.getY()][piece2.getX()] = -1;
-    
-    //Remove the captured piece
-    piece2.parent.removePiece(piece2.id);
-    
-    //Move the capturing piece to its new position
-    movePieceToBoard(piece1,piece2.getX(),piece2.getY(),piece2.parent);
-  }
+  piece.parent.parent.parent.render();
 }
 
 //Calculate all possible locations that any given piece can move to. Create a "movement visual" element for each possibility
 //This is an extremeley large function, because it handles all the diverse moves of the pieces - both on their local boards and accross time.
 function getAvailableMoves(piece){
+  //Reset the movement visuals
   for(var a = 0;a < movementVisuals.length;a += 1){
     if(movementVisuals[a] != undefined){
       movementVisuals[a].remove();
       movementVisuals[a] = undefined;
     }
   }
+  movementVisuals = [];
   
   var px = piece.getX();
   var py = piece.getY();
   
-  movementVisuals = [];
-  
-  function addMoveVisual(v,_x,_y,isblocked,board = undefined){
+  function addMoveVisual(v,x,y,isblocked,board = undefined,customFunc = undefined){
+    //Create the visual element, position it and add it to the parent board
     movementVisuals[v] = document.createElement("div");
     movementVisuals[v].classList.add(isblocked ? "MovementVisualBlocked" : "MovementVisualAvailable");
     movementVisuals[v].id = "MV"+v+"_"+piece.fullid;
-    movementVisuals[v].style.left = _x*32+boardOffset+"px";
-    movementVisuals[v].style.top = _y*32+boardOffset+"px";
+    movementVisuals[v].style.left = x*32+boardOffset+"px";
+    movementVisuals[v].style.top = y*32+boardOffset+"px";
+    //Check which board to add the visual to
     if(board == undefined){
       piece.parent.container.appendChild(movementVisuals[v]);
+      //Set the baord variable to the piece's parent to simplify things later on
+      board = piece.parent;
     }else{
       board.container.appendChild(movementVisuals[v]);
     }
+    
+    //Check if the move is available
     if(!isblocked){
-      addMoveListener(movementVisuals[v],piece,_x,_y,board);
+      movementVisuals[v].addEventListener("click", function(){
+        //Deselect the piece before doing anything
+        globalDeselect();
+        
+        //Store the current game state as the previous move
+        storePastMove();
+        
+        //Add the movement visuals
+        piece.parent.parent.parent.addMovementVisual(piece.tid,piece.bid,piece.getX(),piece.getY());
+        board.parent.parent.addMovementVisual(board.tid,board.id,x,y);
+        
+        if(piece.parent == board){
+          //Create a new board when a piece is moved
+          var newboard = piece.parent.extendTimeline();
+          
+          //Confirm that the new board was successfully created
+          if(newboard != undefined){
+            //Move the piece (The one on the new instance of the board, not the original)
+            movePiece(newboard.pieces[piece.id],x,y);
+          }else{
+            throwError("An error occurred when trying to extend the timeline, please contact the system admin");
+          }
+        }else{
+          //Create a new board and branch the timeline when a piece time travels
+          var newboard1 = piece.parent.extendTimeline();
+          var newboard2 = board.extendTimeline();
+          
+          //Confirm that the new boards were successfully created
+          if(newboard1 != undefined && newboard2 != undefined){
+            //Move the new instance of the piece to the new timeline
+            movePiece(newboard1.pieces[piece.id],x,y,newboard2);
+          }else{
+            throwError("An error occurred when trying to extend the timeline(s), please contact the system admin");
+          }
+        }
+        
+        //If the game is online multiplayer, send the move to the server
+        if(opponent == 1){
+          sendMove(piece,x,y);
+        }
+      });
+    }
+    
+    //If the "customFunc" variable is a function, add it to a second click event attached to the movement visual
+    if(typeof(customFunc) == "function"){
+      movementVisuals[v].addEventListener("click",customFunc);
     }
   }
   
+  //Add a capture visual and create the click event listener
   function addCaptureVisual(v,piece1,piece2){
+    //Create the visual element, position it and add it to the parent board
     movementVisuals[v] = document.createElement("div");
     movementVisuals[v].classList.add("CaptureVisual");
     movementVisuals[v].id = "MV"+v+"_"+piece.fullid;
     movementVisuals[v].style.left = piece2.getX()*32+boardOffset+"px";
     movementVisuals[v].style.top = piece2.getY()*32+boardOffset+"px";
     piece2.parent.container.appendChild(movementVisuals[v]);
-    addCaptureListener(movementVisuals[v],piece1,piece2);
+    
+    //Add the capturing code to the click event of the visual
+    movementVisuals[v].addEventListener("click", function(){
+      //To note: The "piece1" and "piece2" variables are declared in the code where this function is defined. See getAvailableMoves() > addCaptureVisual()
+      
+      //Deselect the piece before doing anything
+      globalDeselect();
+      
+      //Store the current game state as the previous move
+      storePastMove();
+      
+      //Add the movement visuals
+      piece1.parent.parent.parent.addMovementVisual(piece1.tid,piece1.bid,piece1.getX(),piece1.getY());
+      piece2.parent.parent.parent.addMovementVisual(piece2.tid,piece2.bid,piece2.getX(),piece2.getY());
+      
+      //Check if the captured piece is a king (If it is, the player controlling piece1 wins the game)
+      if(piece2.type == 2){
+        win(piece1.color);
+      }
+      
+      //Check if the captured piece is on a different board
+      if(piece1.parent == piece2.parent){
+        //Extend the current timeline
+        var newboard = piece1.parent.extendTimeline();
+        
+        //Make sure the new board was created properly
+        if(newboard == undefined){
+          throwError("Failed to extend timeline while capturing piece");
+        }
+        
+        //Update the piece maps
+        piece2.parent.pieceTypeMap[piece2.getY()][piece2.getX()] = 0;
+        piece2.parent.pieceIDMap[piece2.getY()][piece2.getX()] = -1;
+        
+        //Remove the captured piece
+        piece2.parent.parent.boards[piece2.parent.parent.boards.length-1].pieces[piece2.id].parent.removePiece(piece2.id);
+        
+        //Move the capturing piece to its new position
+        movePiece(newboard.pieces[piece1.id],piece2.getX(),piece2.getY());
+      }else{
+        //Extend both timelines
+        var newboard1 = piece1.parent.extendTimeline();
+        var newboard2 = piece2.parent.extendTimeline();
+        
+        //Make sure the new boards were created properly
+        if(newboard1 == undefined || newboard2 == undefined){
+          throwError("Failed to extend timeline(s) while capturing piece through time");
+        }
+        
+        //Update the piece maps
+        piece2.parent.pieceTypeMap[piece2.getY()][piece2.getX()] = 0;
+        piece2.parent.pieceIDMap[piece2.getY()][piece2.getX()] = -1;
+        
+        //Remove the captured piece
+        piece2.parent.removePiece(piece2.id);
+        
+        //Move the capturing piece to its new position
+        ///movePieceToBoard(newboard1.pieces[piece1.id],piece2.getX(),piece2.getY(),newboard2);
+      }
+    });
   }
   
+  //Check for the type of piece, and add movement visuals depending on how the piece moves
   switch(piece.type){
     case 1:
       //The Master piece can move anywhere on any board
@@ -1220,26 +1240,86 @@ function getAvailableMoves(piece){
         }
       }
       
-      ///Castling (going to have to do something special for sending the move to the server in online multiplayer)
+      //Castling
       if(piece.moveAmount == 0){
         switch(chosenLayout){
           case 0:
             //Default (8x8) board
-            ///if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
-            if(piece.color == 0){
-              
-            }else{
-              
+            
+            //Check if the left rook is available to perform a castle
+            if(piece.parent.pieceTypeMap[py][px-4] == 6){
+              if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px-4] ].moveAmount == 0){
+                //Check if the space in between is available
+                if(piece.parent.pieceTypeMap[py][px-1] == 0 && piece.parent.pieceTypeMap[py][px-2] == 0 && piece.parent.pieceTypeMap[py][px-3] == 0){
+                  //Store the parent timeline and the ID of the new board outside of the function
+                  var parentTimeline = piece.parent.parent;
+                  var newBoardId = parentTimeline.boards.length;
+                  
+                  //Add a movement visual with an extra custom function
+                  addMoveVisual(movementVisuals.length,px-3,py,false,undefined,function(){
+                    //Store the new board and the targetted rook objects
+                    var newBoard = parentTimeline.boards[newBoardId];
+                    var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px-4] ];
+                    
+                    //Update the piece maps
+                    newBoard.pieceTypeMap[py][px-4] = 0;
+                    newBoard.pieceIDMap[py][px-4] = -1;
+                    newBoard.pieceTypeMap[py][px-1] = targetRook.type;
+                    newBoard.pieceIDMap[py][px-1] = targetRook.id;
+                    
+                    //Move the piece to its new position
+                    targetRook.setX(px-1);
+                    
+                    //Increment the amount of moves a piece has made
+                    targetRook.moveAmount += 1;
+                  });
+                }else{
+                  addMoveVisual(movementVisuals.length,px-3,py,true);
+                }
+              }
+            }
+            
+            //Check if the right rook is available to perform a castle
+            if(piece.parent.pieceTypeMap[py][px+3] == 6){
+              if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px+3] ].moveAmount == 0){
+                //Check if the space in between is available
+                if(piece.parent.pieceTypeMap[py][px+1] == 0 && piece.parent.pieceTypeMap[py][px+2] == 0){
+                  //Store the parent timeline and the ID of the new board outside of the function
+                  var parentTimeline = piece.parent.parent;
+                  var newBoardId = parentTimeline.boards.length;
+                  
+                  //Add a movement visual with an extra custom function
+                  addMoveVisual(movementVisuals.length,px+2,py,false,undefined,function(){
+                    //Store the new board and the targetted rook objects
+                    var newBoard = parentTimeline.boards[newBoardId];
+                    var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px+3] ];
+                    
+                    //Update the piece maps
+                    newBoard.pieceTypeMap[py][px+3] = 0;
+                    newBoard.pieceIDMap[py][px+3] = -1;
+                    newBoard.pieceTypeMap[py][px+1] = targetRook.type;
+                    newBoard.pieceIDMap[py][px+1] = targetRook.id;
+                    
+                    //Move the piece to its new position
+                    targetRook.setX(px+1);
+                    
+                    //Increment the amount of moves a piece has made
+                    targetRook.moveAmount += 1;
+                  });
+                }else{
+                  addMoveVisual(movementVisuals.length,px+2,py,true);
+                }
+              }
             }
             break;
           case 1:
-            
+            ///Yet to implement
             break;
           case 2:
-            
+            ///Yet to implement
             break;
           case 3:
-            
+            ///Yet to implement
             break;
           default:
             console.warn("Warning: Invalid layout to check for castling");
@@ -1248,185 +1328,72 @@ function getAvailableMoves(piece){
       
       break;
     case 3:
-      //The Queen can move in any one direction by an unlimited amount of spaces (diagonals function the same way as the bishop, see below)
+      //The Queen can move in any one direction by an unlimited amount of spaces
       
-      //Loop through all diagonal moves and check if there is line-of-sight to that space
-      var blocked = 0;
-      for(var a = 1;a < boardWidth-px && a < boardHeight-py;a += 1){
-        if(px+a >= 0 && py+a >= 0 && px+a < boardWidth && py+a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py+a ][ px+a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(a,px+a,py+a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+a ] ].color != piece.color){
-                addCaptureVisual(a,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+a ] ]);
-              }else{
-                addMoveVisual(a,px+a,py+a,true);
-              }
+      //This code is pretty much a combination of the bishop & rook movement code, see 'case 4' and 'case 6'
+      
+      //Loop through the 4 cardinal directions
+      for(var dir = 0;dir < 4;dir += 1){
+        var blocked = 0;
+        
+        //Loop through all diagonal tiles and check if there is line-of-sight to that position
+        for(var a = 1;(dir%2 == 1 && a <= px || dir%2 == 0 && a < boardWidth-px) && (dir < 2 && a < boardHeight-py || dir >= 2 && a <= py);a += 1){
+          //Store the coordinates of the tile that is currently being checked
+          var _x = (dir%2 == 0)?(px+a):(px-a);
+          var _y = (dir   <  2)?(py+a):(py-a);
+          
+          if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+            if(piece.parent.pieceTypeMap[_y][_x] != 0){
               blocked += 1;
-              break;
-            default:
-              addMoveVisual(a,px+a,py+a,true);
-          }
-        }
-      }
-      blocked = 0;
-      for(var a = 1;a <= px && a < boardHeight-py;a += 1){
-        if(px-a >= 0 && py+a >= 0 && px-a < boardWidth && py+a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py+a ][ px-a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(movementVisuals.length,px-a,py+a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-a ] ].color != piece.color){
-                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-a ] ]);
-              }else{
-                addMoveVisual(movementVisuals.length,px-a,py+a,true);
-              }
-              blocked += 1;
-              break;
-            default:
-              addMoveVisual(movementVisuals.length,px-a,py+a,true);
-          }
-        }
-      }
-      blocked = 0;
-      for(var a = 1;a < boardWidth-px && a <= py;a += 1){
-        if(px+a >= 0 && py-a >= 0 && px+a < boardWidth && py-a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py-a ][ px+a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(movementVisuals.length,px+a,py-a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px+a ] ].color != piece.color){
-                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px+a ] ]);
-              }else{
-                addMoveVisual(movementVisuals.length,px+a,py-a,true);
-              }
-              blocked += 1;
-              break;
-            default:
-              addMoveVisual(movementVisuals.length,px+a,py-a,true);
-          }
-        }
-      }
-      blocked = 0;
-      for(var a = 1;a <= px && a <= py;a += 1){
-        if(px-a >= 0 && py-a >= 0 && px-a < boardWidth && py-a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py-a ][ px-a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(movementVisuals.length,px-a,py-a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px-a ] ].color != piece.color){
-                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px-a ] ]);
-              }else{
-                addMoveVisual(movementVisuals.length,px-a,py-a,true);
-              }
-              blocked += 1;
-              break;
-            default:
-              addMoveVisual(movementVisuals.length,px-a,py-a,true);
+            }
+            switch(blocked){
+              case 0:
+                addMoveVisual(movementVisuals.length,_x,_y,false);
+                break;
+              case 1:
+                if(piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ].color != piece.color){
+                  addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ]);
+                }else{
+                  addMoveVisual(movementVisuals.length,_x,_y,true);
+                }
+                blocked += 1;
+                break;
+              default:
+                addMoveVisual(movementVisuals.length,_x,_y,true);
+            }
           }
         }
       }
       
-      //Loop through all orthogonal moves and check if there is line-of-sight to that space
-      blocked = 0;
-      for(var a = px+1;a < boardWidth;a += 1){
-        if(piece.parent.pieceTypeMap[ py ][ a ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(movementVisuals.length,a,py,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ]);
-            }else{
-              addMoveVisual(movementVisuals.length,a,py,true);
-            }
+      //Loop through the 4 cardinal directions
+      for(var dir = 0;dir < 4;dir += 1){
+        var blocked = 0;
+        //Loop through all orthogonal tiles and check if there is line-of-sight to that position
+        for(var a = (dir < 2 ? px+1-(dir%2)*2 : py+1-(dir%2)*2);(a >= 0 && (dir < 2 && a < boardWidth || dir >= 2 && a < boardHeight));a += (dir%2 == 0?1:-1)){
+          //Store the coordinates of the tile that is currently being checked
+          var _x = (dir < 2)?(a):(px);
+          var _y = (dir < 2)?(py):(a);
+          
+          //If the position is blocked, increment the "blocked" variable by one
+          if(piece.parent.pieceTypeMap[_y][_x] != 0){
             blocked += 1;
-            break;
-          default:
-            addMoveVisual(movementVisuals.length,a,py,true);
-        }
-      }
-      blocked = 0;
-      for(var a = px-1;a >= 0;a -= 1){
-        if(piece.parent.pieceTypeMap[ py ][ a ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(movementVisuals.length,a,py,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ]);
-            }else{
-              addMoveVisual(movementVisuals.length,a,py,true);
-            }
-            blocked += 1;
-            break;
-          default:
-            addMoveVisual(movementVisuals.length,a,py,true);
-        }
-      }
-      blocked = 0;
-      for(var a = py+1;a < boardHeight;a += 1){
-        if(piece.parent.pieceTypeMap[ a ][ px ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(movementVisuals.length,px,a,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ]);
-            }else{
-              addMoveVisual(movementVisuals.length,px,a,true);
-            }
-            blocked += 1;
-            break;
-          default:
-            addMoveVisual(movementVisuals.length,px,a,true);
-        }
-      }
-      blocked = 0;
-      for(var a = py-1;a >= 0;a -= 1){
-        if(piece.parent.pieceTypeMap[ a ][ px ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(movementVisuals.length,px,a,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ]);
-            }else{
-              addMoveVisual(movementVisuals.length,px,a,true);
-            }
-            blocked += 1;
-            break;
-          default:
-            addMoveVisual(movementVisuals.length,px,a,true);
+          }
+          //Create a different movement visual depending on the value of "blocked"
+          switch(blocked){
+            case 0:
+              addMoveVisual(movementVisuals.length,_x,_y,false);
+              break;
+            case 1:
+              if(piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ].color != piece.color){
+                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ]);
+              }else{
+                addMoveVisual(movementVisuals.length,_x,_y,true);
+              }
+              blocked += 1;
+              break;
+            default:
+              addMoveVisual(movementVisuals.length,_x,_y,true);
+          }
         }
       }
       
@@ -1434,96 +1401,37 @@ function getAvailableMoves(piece){
     case 4:
       //The Bishop moves up/down one square and sideways one square (making a diagonal move) by an unlimited amount of spaces
       
-      //Loop through all diagonal moves and check if there is line-of-sight to that space
-      var blocked = 0;
-      for(var a = 1;a < boardWidth-px && a < boardHeight-py;a += 1){
-        if(px+a >= 0 && py+a >= 0 && px+a < boardWidth && py+a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py+a ][ px+a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(a,px+a,py+a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+a ] ].color != piece.color){
-                addCaptureVisual(a,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+a ] ]);
-              }else{
-                addMoveVisual(a,px+a,py+a,true);
-              }
+      //The code below practically unreadable. I wouldn't blame you for not understanding it, so I have an expanded version of the below loop on GitHub (in 'Alternate Code/Bishop.js')
+      
+      //Loop through the 4 cardinal directions
+      for(var dir = 0;dir < 4;dir += 1){
+        var blocked = 0;
+        
+        //Loop through all diagonal tiles and check if there is line-of-sight to that position
+        for(var a = 1;(dir%2 == 1 && a <= px || dir%2 == 0 && a < boardWidth-px) && (dir < 2 && a < boardHeight-py || dir >= 2 && a <= py);a += 1){
+          //Store the coordinates of the tile that is currently being checked
+          var _x = (dir%2 == 0)?(px+a):(px-a);
+          var _y = (dir   <  2)?(py+a):(py-a);
+          
+          if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+            if(piece.parent.pieceTypeMap[_y][_x] != 0){
               blocked += 1;
-              break;
-            default:
-              addMoveVisual(a,px+a,py+a,true);
-          }
-        }
-      }
-      blocked = 0;
-      for(var a = 1;a <= px && a < boardHeight-py;a += 1){
-        if(px-a >= 0 && py+a >= 0 && px-a < boardWidth && py+a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py+a ][ px-a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(movementVisuals.length,px-a,py+a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-a ] ].color != piece.color){
-                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-a ] ]);
-              }else{
-                addMoveVisual(movementVisuals.length,px-a,py+a,true);
-              }
-              blocked += 1;
-              break;
-            default:
-              addMoveVisual(movementVisuals.length,px-a,py+a,true);
-          }
-        }
-      }
-      blocked = 0;
-      for(var a = 1;a < boardWidth-px && a <= py;a += 1){
-        if(px+a >= 0 && py-a >= 0 && px+a < boardWidth && py-a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py-a ][ px+a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(movementVisuals.length,px+a,py-a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px+a ] ].color != piece.color){
-                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px+a ] ]);
-              }else{
-                addMoveVisual(movementVisuals.length,px+a,py-a,true);
-              }
-              blocked += 1;
-              break;
-            default:
-              addMoveVisual(movementVisuals.length,px+a,py-a,true);
-          }
-        }
-      }
-      blocked = 0;
-      for(var a = 1;a <= px && a <= py;a += 1){
-        if(px-a >= 0 && py-a >= 0 && px-a < boardWidth && py-a < boardHeight){
-          if(piece.parent.pieceTypeMap[ py-a ][ px-a ] != 0){
-            blocked += 1;
-          }
-          switch(blocked){
-            case 0:
-              addMoveVisual(movementVisuals.length,px-a,py-a,false);
-              break;
-            case 1:
-              if(piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px-a ] ].color != piece.color){
-                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py-a ][ px-a ] ]);
-              }else{
-                addMoveVisual(movementVisuals.length,px-a,py-a,true);
-              }
-              blocked += 1;
-              break;
-            default:
-              addMoveVisual(movementVisuals.length,px-a,py-a,true);
+            }
+            switch(blocked){
+              case 0:
+                addMoveVisual(movementVisuals.length,_x,_y,false);
+                break;
+              case 1:
+                if(piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ].color != piece.color){
+                  addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ]);
+                }else{
+                  addMoveVisual(movementVisuals.length,_x,_y,true);
+                }
+                blocked += 1;
+                break;
+              default:
+                addMoveVisual(movementVisuals.length,_x,_y,true);
+            }
           }
         }
       }
@@ -1559,93 +1467,100 @@ function getAvailableMoves(piece){
         }
       }
       
+      //You know what? Let's just cheat & store all the possible spaces in an array, I'm sure it won't be that bad... (actually yeah, it would)
+      ///spaces = [
+      ///  [-2,-1], //2 Left,  1 Up
+      ///  [-2,1],  //2 Left,  1 Down
+      ///  [-1,-2], //1 Left,  2 Up
+      ///  [1,-2],  //1 Right, 2 Up
+      ///  [2,-1],  //2 Right, 1 Up
+      ///  [2,1],   //2 Right, 1 Down
+      ///  [-1,2],  //1 Left,  2 Down
+      ///  [1,2]    //1 Right, 2 Down
+      ///];
+      
+      //Loop through the 4 cardinal directions
+      for(var dir = 0;dir < 4;dir += 1){
+        
+      }
+      
+      /**
+      //Loop through the array of possible moves, but this time check the relative boards for available moves through time
+      for(var a = 0;a < spaces.length;a += 1){
+        if(piece.parent.id+spaces[a][0]*2 >= 0){
+        if(piece.parent.parent.id+spaces[a][1] >= 0){
+        if(piece.parent.parent.id+spaces[a][1] < piece.parent.parent.parent.timelines.length){
+        if(piece.parent.id+spaces[a][0]*2 < piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards.length){
+        if(piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ] != undefined){
+          
+          var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ];
+          
+          //Detect which type of visual should be used (available move, blocked move, or capture)
+          if(board.pieceTypeMap[ py ][ px ] == 0){
+            addMoveVisual(movementVisuals.length,px,py,false,board);
+          }else{
+            if(board.pieces[ board.pieceIDMap[ py ][ px ] ].color != piece.color){
+              addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[ py ][ px ] ]);
+            }else{
+              addMoveVisual(movementVisuals.length,px,py,true,board);
+            }
+          }
+          
+          for(var b = 0;b < spaces.length;b += 1){
+            if(px+spaces[b][0] >= 0 && py+spaces[b][1] >= 0 && px+spaces[b][0] < boardWidth && py+spaces[b][1] < boardHeight){
+              if(board.pieceTypeMap[ py+spaces[b][1] ][ px+spaces[b][0] ] == 0){
+                addMoveVisual(movementVisuals.length,px+spaces[b][0],py+spaces[b][1],false,board);
+              }else{
+                if(board.pieces[ board.pieceIDMap[ py+spaces[b][1] ][ px+spaces[b][0] ] ].color != piece.color){
+                  addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[ py+spaces[b][1] ][ px+spaces[b][0] ] ]);
+                }else{
+                  addMoveVisual(movementVisuals.length,px+spaces[b][0],py+spaces[b][1],true,board);
+                }
+              }
+            }
+          }
+        }
+        }
+        }
+        }
+        }
+      }*/
+      
       break;
     case 6:
       //The Rook can move orthogonally in any one direction by an unlimited amount of spaces
       
-      //Loop through all orthogonal moves and check if there is line-of-sight to that space
-      var blocked = 0;
-      for(var a = px+1;a < boardWidth;a += 1){
-        if(piece.parent.pieceTypeMap[ py ][ a ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(a,a,py,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ].color != piece.color){
-              addCaptureVisual(a,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ]);
-            }else{
-              addMoveVisual(a,a,py,true);
-            }
+      //The code below practically unreadable. I wouldn't blame you for not understanding it, so I have an expanded version of the below loop on GitHub (in 'Alternate Code/Rook.js')
+      
+      //Loop through the 4 cardinal directions
+      for(var dir = 0;dir < 4;dir += 1){
+        var blocked = 0;
+        //Loop through all orthogonal tiles and check if there is line-of-sight to that position
+        for(var a = (dir < 2 ? px+1-(dir%2)*2 : py+1-(dir%2)*2);(a >= 0 && (dir < 2 && a < boardWidth || dir >= 2 && a < boardHeight));a += (dir%2 == 0?1:-1)){
+          //Store the coordinates of the tile that is currently being checked
+          var _x = (dir < 2)?(a):(px);
+          var _y = (dir < 2)?(py):(a);
+          
+          //If the position is blocked, increment the "blocked" variable by one
+          if(piece.parent.pieceTypeMap[_y][_x] != 0){
             blocked += 1;
-            break;
-          default:
-            addMoveVisual(a,a,py,true);
-        }
-      }
-      blocked = 0;
-      for(var a = px-1;a >= 0;a -= 1){
-        if(piece.parent.pieceTypeMap[ py ][ a ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(a,a,py,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ].color != piece.color){
-              addCaptureVisual(a,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py ][ a ] ]);
-            }else{
-              addMoveVisual(a,a,py,true);
-            }
-            blocked += 1;
-            break;
-          default:
-            addMoveVisual(a,a,py,true);
-        }
-      }
-      blocked = 0;
-      for(var a = py+1;a < boardHeight;a += 1){
-        if(piece.parent.pieceTypeMap[ a ][ px ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(movementVisuals.length,px,a,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ]);
-            }else{
-              addMoveVisual(movementVisuals.length,px,a,true);
-            }
-            blocked += 1;
-            break;
-          default:
-            addMoveVisual(movementVisuals.length,px,a,true);
-        }
-      }
-      blocked = 0;
-      for(var a = py-1;a >= 0;a -= 1){
-        if(piece.parent.pieceTypeMap[ a ][ px ] != 0){
-          blocked += 1;
-        }
-        switch(blocked){
-          case 0:
-            addMoveVisual(movementVisuals.length,px,a,false);
-            break;
-          case 1:
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ a ][ px ] ]);
-            }else{
-              addMoveVisual(movementVisuals.length,px,a,true);
-            }
-            blocked += 1;
-            break;
-          default:
-            addMoveVisual(movementVisuals.length,px,a,true);
+          }
+          //Create a different movement visual depending on the value of "blocked"
+          switch(blocked){
+            case 0:
+              addMoveVisual(movementVisuals.length,_x,_y,false);
+              break;
+            case 1:
+              if(piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ].color != piece.color){
+                addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[_y][_x] ]);
+              }else{
+                addMoveVisual(movementVisuals.length,_x,_y,true);
+              }
+              blocked += 1;
+              break;
+            default:
+              addMoveVisual(movementVisuals.length,_x,_y,true);
+          }
         }
       }
       
@@ -1658,6 +1573,7 @@ function getAvailableMoves(piece){
       if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
         a = -1;
       }
+      
       //Make sure that the pawn is not at the end of the board, but allow for the pawn to be at the very back (for custom layouts)
       if((py+a >= 0 || a == 1) && (py+a < boardHeight || a == -1)){
         //Allow the piece to move forward by one space if available
@@ -1666,7 +1582,8 @@ function getAvailableMoves(piece){
         }else{
           addMoveVisual(0,px,py+a,true);
         }
-        //Allow the piece to take on the forward-right diagonal
+        
+        //Allow the piece to capture on the forward-right diagonal
         if(px+1 < boardWidth){
           if(piece.parent.pieceTypeMap[ py+a ][ px+1 ] != 0){
             if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+1 ] ].color != piece.color){
@@ -1678,7 +1595,8 @@ function getAvailableMoves(piece){
             addMoveVisual(2,px+1,py+a,true);
           }
         }
-        //Allow the piece to take on the forward-left diagonal
+        
+        //Allow the piece to capture on the forward-left diagonal
         if(px-1 >= 0){
           if(piece.parent.pieceTypeMap[ py+a ][ px-1 ] != 0){
             if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-1 ] ].color != piece.color){
@@ -1690,12 +1608,89 @@ function getAvailableMoves(piece){
             addMoveVisual(3,px-1,py+a,true);
           }
         }
+        
         //If it's the piece's first move, allow it to move one extra space forward
         if(piece.moveAmount == 0){
           if(piece.parent.pieceTypeMap[ py+a ][ px ] == 0 && piece.parent.pieceTypeMap[ py+a*2 ][ px ] == 0){
             addMoveVisual(1,px,py+a*2,false);
           }else{
             addMoveVisual(1,px,py+a*2,true);
+          }
+        }
+      }else{
+        console.warn("Warning: This pawn should have been promoted");
+      }
+      
+      //For time-travel, do the same thing as above, but for boards instead of tiles (With a lot of extra checks for the existence of boards)
+      
+      //Check that the pawn has another timeline in front of it to move to
+      if(piece.parent.parent.id+a >= 0 && piece.parent.parent.id+a < piece.parent.parent.parent.timelines.length){
+        //Allow the piece to move up by one board if available
+        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id] != undefined){
+          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id];
+          
+          if(board.pieceTypeMap[py][px] == 0){
+            addMoveVisual(movementVisuals.length,px,py,false,board);
+          }else{
+            addMoveVisual(movementVisuals.length,px,py,true,board);
+          }
+        }
+        
+        //Allow the piece to capture on the forward-right diagonal
+        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id+2] != undefined){
+          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id+2];
+          
+          if(board.pieceTypeMap[py][px] != 0){
+            if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
+              addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ],board);
+            }else{
+              addMoveVisual(movementVisuals.length,px,py,true,board);
+            }
+          }else{
+            addMoveVisual(movementVisuals.length,px,py,true,board);
+          }
+        }
+        
+        //Allow the piece to capture on the forward-left diagonal
+        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id-2] != undefined){
+          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id-2];
+          
+          if(board.pieceTypeMap[py][px] != 0){
+            if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
+              addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ],board);
+            }else{
+              addMoveVisual(movementVisuals.length,px,py,true,board);
+            }
+          }else{
+            addMoveVisual(movementVisuals.length,px,py,true,board);
+          }
+        }
+      }
+      
+      //If it's the piece's first move, allow it to jump one extra board forward
+      if(piece.moveAmount == 0){
+        //Check for the presence of a valid board 2 boards in front of the pawn
+        if(piece.parent.parent.id+a*2 >= 0 && piece.parent.parent.id+a*2 < piece.parent.parent.parent.timelines.length){
+          if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a*2].boards[piece.parent.id] != undefined){
+            //Store the new board in a variable to make it quicker to access
+            var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a*2].boards[piece.parent.id];
+            
+            //Check for the presence of a valid board 1 board in front of the pawn
+            if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id] != undefined){
+              //Check that the middle board has a free space for the pawn to jump across
+              if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id].pieceTypeMap[py][px] == 0){
+                
+                if(board.pieceTypeMap[py][px] == 0){
+                  addMoveVisual(movementVisuals.length,px,py,false,board);
+                }else{
+                  addMoveVisual(movementVisuals.length,px,py,true,board);
+                }
+              }else{
+                addMoveVisual(movementVisuals.length,px,py,true,board);
+              }
+            }else{
+              addMoveVisual(movementVisuals.length,px,py,true,board);
+            }
           }
         }
       }
@@ -1731,9 +1726,11 @@ function newGame(){
   var startingBoard = startingTimeline.addBoard(0);
   startingBoard.setSelectable(true);
   startingBoard.setStartingLayout();
+  
+  fields[0].render();
 }
 
-///Delete an old game and crate a new one [DEBUG]
+///Delete the old game and create a new one [DEBUG]
 function resetGame(){
   globalDeselect();
   
@@ -1870,8 +1867,6 @@ if(opponent == 0){
 function exportGame(){
   var simplified = fields[0].simplify();
   
-  console.log(simplified);
-  
   //Store the the JSON text in a URI encoded 
   var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified,null,2));
   
@@ -1885,7 +1880,7 @@ function exportGame(){
   
   //Artificially "click" the download anchor element
   downloadAnchor.click();
-    
+  
   console.log("Exported game as JSON");
 }
 

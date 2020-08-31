@@ -6,6 +6,8 @@ Anthony Wilson
 
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
 While the game concept is not completely ours, this entire site was written from the ground up, so the code is ours.
+
+See https://github.com/Anthony-Wilson-Programming/4DChess for the complete source code.
 -->
 
 <?php
