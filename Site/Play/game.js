@@ -15,6 +15,8 @@
 // Store the dimensions of the board in the simplified object, so that you can't import game saves with differently sized boards
 // !!! Add online multiplayer capturing !!!
 // Make pawn promotion customisable
+// Check Knight time-travel moves
+// Change rook time-travel movement, calculate it in a loop instead of recursively
 // Add per-game chat for online multiplayer
 // Fix the title bar (make it collapsable)
 // Add online multiplayer password functionality
@@ -1121,22 +1123,39 @@ function getAvailableMoves(piece){
         }
         
         //Update the piece maps
-        piece2.parent.pieceTypeMap[piece2.getY()][piece2.getX()] = 0;
-        piece2.parent.pieceIDMap[piece2.getY()][piece2.getX()] = -1;
+        newboard2.pieceTypeMap[piece2.getY()][piece2.getX()] = 0;
+        newboard2.pieceIDMap[piece2.getY()][piece2.getX()] = -1;
         
         //Remove the captured piece
-        piece2.parent.removePiece(piece2.id);
+        newboard2.removePiece(piece2.id);
         
         //Move the capturing piece to its new position
-        ///movePieceToBoard(newboard1.pieces[piece1.id],piece2.getX(),piece2.getY(),newboard2);
+        movePiece(newboard1.pieces[piece1.id],piece2.getX(),piece2.getY(),newboard2);
       }
     });
+  }
+  
+  //Checks for the existence of a board and timeline (the ID of each is found by the given board & timeline "offset")
+  function checkForBoard(bOffset,tOffset,startingBoard = piece.parent){
+    //Yes, I am quite aware that I can combine these into one if clause, but there's no point, and this is far more readable
+    if(startingBoard.id+bOffset >= 0){
+      if(startingBoard.parent.id+tOffset >= 0){
+        if(startingBoard.parent.id+tOffset < startingBoard.parent.parent.timelines.length){
+          if(startingBoard.id+bOffset < startingBoard.parent.parent.timelines[ startingBoard.parent.id+tOffset ].boards.length){
+            if(startingBoard.parent.parent.timelines[ startingBoard.parent.id+tOffset ].boards[ startingBoard.id+bOffset ] != undefined){
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
   }
   
   //Check for the type of piece, and add movement visuals depending on how the piece moves
   switch(piece.type){
     case 1:
-      //The Master piece can move anywhere on any board
+      //The Master piece can move anywhere on any board (It's used for debugging purposes, but could also be used as a custom piece, as long as the players manually keep track of where it can move)
       
       //Loop through all the fields
       for(var f = 0;f < fields.length;f += 1){
@@ -1197,15 +1216,11 @@ function getAvailableMoves(piece){
             }
           }
         }
-      }
-      
-      //Loop through the array of possible moves, but this time check the relative boards for available moves through time
-      for(var a = 0;a < spaces.length;a += 1){
-        if(piece.parent.id+spaces[a][0]*2 >= 0){
-        if(piece.parent.parent.id+spaces[a][1] >= 0){
-        if(piece.parent.parent.id+spaces[a][1] < piece.parent.parent.parent.timelines.length){
-        if(piece.parent.id+spaces[a][0]*2 < piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards.length){
-        if(piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ] != undefined){
+        
+        //Do the same thing, but this time check the relative boards for available moves through time
+        
+        //Check if the target board exists
+        if(checkForBoard(spaces[a][0]*2,spaces[a][1])){
           
           var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ];
           
@@ -1233,10 +1248,6 @@ function getAvailableMoves(piece){
               }
             }
           }
-        }
-        }
-        }
-        }
         }
       }
       
@@ -1332,8 +1343,10 @@ function getAvailableMoves(piece){
       
       //This code is pretty much a combination of the bishop & rook movement code, see 'case 4' and 'case 6'
       
-      //Loop through the 4 cardinal directions
+      //Loop through the 4 cardinal directions, executing both the bishop and the rook code
       for(var dir = 0;dir < 4;dir += 1){
+        //Bishop code
+        
         var blocked = 0;
         
         //Loop through all diagonal tiles and check if there is line-of-sight to that position
@@ -1363,11 +1376,11 @@ function getAvailableMoves(piece){
             }
           }
         }
-      }
-      
-      //Loop through the 4 cardinal directions
-      for(var dir = 0;dir < 4;dir += 1){
-        var blocked = 0;
+        
+        //Rook code
+        
+        blocked = 0;
+        
         //Loop through all orthogonal tiles and check if there is line-of-sight to that position
         for(var a = (dir < 2 ? px+1-(dir%2)*2 : py+1-(dir%2)*2);(a >= 0 && (dir < 2 && a < boardWidth || dir >= 2 && a < boardHeight));a += (dir%2 == 0?1:-1)){
           //Store the coordinates of the tile that is currently being checked
@@ -1403,7 +1416,7 @@ function getAvailableMoves(piece){
       
       //The code below practically unreadable. I wouldn't blame you for not understanding it, so I have an expanded version of the below loop on GitHub (in 'Alternate Code/Bishop.js')
       
-      //Loop through the 4 cardinal directions
+      //Loop through the 4 cardinal directions (0 = Down-Left/South-East, 2 = Down-Right/South-West, 3 = Up-Left/North-East, 4 = Up-Right/North-West)
       for(var dir = 0;dir < 4;dir += 1){
         var blocked = 0;
         
@@ -1438,7 +1451,7 @@ function getAvailableMoves(piece){
       
       break;
     case 5:
-      //The Knight moves orthogonally by 2 spaces then again by 1 space (at a right angle to its original direction), jumping over pieces that are in the way
+      //The Knight moves orthogonally by 2 spaces then again by 1 space (perpinticular to its original direction), jumping over pieces that are in the way
       
       //Store all the spaces that a knight can move to in an array
       var spaces = [
@@ -1467,64 +1480,93 @@ function getAvailableMoves(piece){
         }
       }
       
-      //You know what? Let's just cheat & store all the possible spaces in an array, I'm sure it won't be that bad... (actually yeah, it would)
-      ///spaces = [
-      ///  [-2,-1], //2 Left,  1 Up
-      ///  [-2,1],  //2 Left,  1 Down
-      ///  [-1,-2], //1 Left,  2 Up
-      ///  [1,-2],  //1 Right, 2 Up
-      ///  [2,-1],  //2 Right, 1 Up
-      ///  [2,1],   //2 Right, 1 Down
-      ///  [-1,2],  //1 Left,  2 Down
-      ///  [1,2]    //1 Right, 2 Down
-      ///];
-      
-      //Loop through the 4 cardinal directions
-      for(var dir = 0;dir < 4;dir += 1){
-        
+      //Use a recursive function to calculate the time-travel moves of the knight
+      function checkKnightMoves(board,iteration,direction){
+        //Loop through the 4 cardinal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
+        for(var dir = 0;dir < 4;dir += 1){
+          //Check which iteration the function is up to
+          switch(iteration){
+            case 0:
+              //Calculate the coordinates of the movement visual
+              var _x = px+((dir < 2)?2-(dir%2)*4:0);
+              var _y = py+((dir < 2)?0:2-(dir%2)*4);
+              
+              //Check that the visual is within the bounds of the board
+              if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+                if(board.pieceTypeMap[_y][_x] == 0){
+                  addMoveVisual(movementVisuals.length,_x,_y,false,board);
+                }else{
+                  if(board.pieces[ board.pieceIDMap[_y][_x] ].color != piece.color){
+                    addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[_y][_x] ]);
+                  }else{
+                    addMoveVisual(movementVisuals.length,_x,_y,true,board);
+                  }
+                }
+              }
+              
+              //Execute the function for the next board in line
+              if(dir == direction){
+                //Check if the target board exists
+                if(checkForBoard((dir < 2)?2-(dir%2)*4:0,(dir < 2)?0:1-(dir%2)*2,board)){
+                  var nextboard = board.parent.parent.timelines[ board.parent.id+((dir < 2)?0:1-(dir%2)*2) ].boards[ board.id+((dir < 2)?2-(dir%2)*4:0) ];
+                  
+                  checkKnightMoves(nextboard,iteration+1,dir);
+                }
+              }
+              
+              break;
+            case 1:
+              //Calculate the coordinates of the movement visual
+              var _x = px+((dir < 2)?1-(dir%2)*2:0);
+              var _y = py+((dir < 2)?0:1-(dir%2)*2);
+              
+              //Check that the visual is within the bounds of the board
+              if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+                if(board.pieceTypeMap[_y][_x] == 0){
+                  addMoveVisual(movementVisuals.length,_x,_y,false,board);
+                }else{
+                  if(board.pieces[ board.pieceIDMap[_y][_x] ].color != piece.color){
+                    addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[_y][_x] ]);
+                  }else{
+                    addMoveVisual(movementVisuals.length,_x,_y,true,board);
+                  }
+                }
+              }
+              break;
+            default:
+              console.warn("Warning: Reached an invalid amount of iterations while attempting to calcuate knight time-travel moves");
+          }
+        }
       }
       
-      /**
+      //Loop through the 4 cardinal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
+      for(var dir = 0;dir < 4;dir += 1){
+        //Check that the target board exists
+        if(checkForBoard((dir < 2)?2-(dir%2)*4:0,(dir < 2)?0:1-(dir%2)*2)){
+          var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+((dir < 2)?0:1-(dir%2)*2) ].boards[ piece.parent.id+((dir < 2)?2-(dir%2)*4:0) ];
+          //Call the function for each direction
+          checkKnightMoves(board,0,dir);
+        }
+      }
+      
       //Loop through the array of possible moves, but this time check the relative boards for available moves through time
       for(var a = 0;a < spaces.length;a += 1){
-        if(piece.parent.id+spaces[a][0]*2 >= 0){
-        if(piece.parent.parent.id+spaces[a][1] >= 0){
-        if(piece.parent.parent.id+spaces[a][1] < piece.parent.parent.parent.timelines.length){
-        if(piece.parent.id+spaces[a][0]*2 < piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards.length){
-        if(piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ] != undefined){
-          
+        //Check if the target board exists
+        if(checkForBoard(spaces[a][0]*2,spaces[a][1])){
           var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ];
           
           //Detect which type of visual should be used (available move, blocked move, or capture)
-          if(board.pieceTypeMap[ py ][ px ] == 0){
+          if(board.pieceTypeMap[py][px] == 0){
             addMoveVisual(movementVisuals.length,px,py,false,board);
           }else{
-            if(board.pieces[ board.pieceIDMap[ py ][ px ] ].color != piece.color){
-              addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[ py ][ px ] ]);
+            if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
+              addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ]);
             }else{
               addMoveVisual(movementVisuals.length,px,py,true,board);
             }
           }
-          
-          for(var b = 0;b < spaces.length;b += 1){
-            if(px+spaces[b][0] >= 0 && py+spaces[b][1] >= 0 && px+spaces[b][0] < boardWidth && py+spaces[b][1] < boardHeight){
-              if(board.pieceTypeMap[ py+spaces[b][1] ][ px+spaces[b][0] ] == 0){
-                addMoveVisual(movementVisuals.length,px+spaces[b][0],py+spaces[b][1],false,board);
-              }else{
-                if(board.pieces[ board.pieceIDMap[ py+spaces[b][1] ][ px+spaces[b][0] ] ].color != piece.color){
-                  addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[ py+spaces[b][1] ][ px+spaces[b][0] ] ]);
-                }else{
-                  addMoveVisual(movementVisuals.length,px+spaces[b][0],py+spaces[b][1],true,board);
-                }
-              }
-            }
-          }
         }
-        }
-        }
-        }
-        }
-      }*/
+      }
       
       break;
     case 6:
@@ -1532,7 +1574,48 @@ function getAvailableMoves(piece){
       
       //The code below practically unreadable. I wouldn't blame you for not understanding it, so I have an expanded version of the below loop on GitHub (in 'Alternate Code/Rook.js')
       
-      //Loop through the 4 cardinal directions
+      ///var fieldwidth = 0;
+      ///for(var a = 0;a < piece.parent.parent.parent.timelines.length;a += 1){
+      ///  if(piece.parent.parent.parent.timelines[a] != undefined && piece.parent.parent.parent.timelines[a].boards.length > fieldwidth){
+      ///    fieldwidth = piece.parent.parent.parent.timelines[a].boards.length;
+      ///  }
+      ///}
+      ///
+      ///var timetravelBlocked = 0;
+      
+      //Create a recursive function to check for the time-travel moves of the rook
+      function checkRookMove(board,direction){
+        //Add the movement visual depending on if the space is blocked or not
+        if(board.pieceTypeMap[py][px] == 0){
+          addMoveVisual(movementVisuals.length,px,py,false,board);
+          
+          //Execute the function recursively in the same direction, but for the next board in line
+          if(direction < 2){
+            //Check for a board to the left/right of the supplied one
+            if(checkForBoard(2-(direction%2)*4,0,board)){
+              var nextboard = board.parent.boards[board.id+2-(direction%2)*4];
+              
+              checkRookMove(nextboard,direction);
+            }
+          }else{
+            //Check for a board above/below the supplied one
+            if(checkForBoard(0,1-(direction%2)*2,board)){
+              var nextboard = board.parent.parent.timelines[board.parent.id+1-(direction%2)*2].boards[board.id];
+              
+              checkRookMove(nextboard,direction);
+            }
+          }
+        }else{
+          if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
+            addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ]);
+          }else{
+            addMoveVisual(movementVisuals.length,px,py,true,board);
+          }
+        }
+      }
+      
+      
+      //Loop through the 4 cardinal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
       for(var dir = 0;dir < 4;dir += 1){
         var blocked = 0;
         //Loop through all orthogonal tiles and check if there is line-of-sight to that position
@@ -1560,6 +1643,23 @@ function getAvailableMoves(piece){
               break;
             default:
               addMoveVisual(movementVisuals.length,_x,_y,true);
+          }
+        }
+        
+        //Call the recursive function to check for time-travel moves
+        if(dir < 2){
+          //Check for a board to the left/right of the supplied one
+          if(checkForBoard(2-(dir%2)*4,0)){
+            var nextboard = piece.parent.parent.boards[piece.parent.id+2-(dir%2)*4];
+            
+            checkRookMove(nextboard,dir);
+          }
+        }else{
+          //Check for a board above/below the supplied one
+          if(checkForBoard(0,1-(dir%2)*2)){
+            var nextboard = piece.parent.parent.parent.timelines[piece.parent.parent.id+1-(dir%2)*2].boards[piece.parent.id];
+            
+            checkRookMove(nextboard,dir);
           }
         }
       }
@@ -1697,11 +1797,11 @@ function getAvailableMoves(piece){
       
       break;
     case 8:
-      console.log("Dragon selected");
+      console.warn("Dragon selected, no way to calculate moves yet");
       
       break;
     case 9:
-      console.log("Unicorn selected");
+      console.warn("Unicorn selected, no way to calculate moves yet");
       
       break;
     default:
@@ -1795,6 +1895,7 @@ function win(player){
 //Deliberatly throw an error in case of critical failure (stop execution & make the error clear to the end-user)
 function throwError(err){
   document.getElementById("MainSubtitle").innerHTML = err;
+  document.getElementById("MainSubtitle").style.color = "#ff0000";
   gameContainer.innerHTML = "";
   throw new Error(err);
 }
