@@ -1,16 +1,20 @@
 <!--
 Anthony Wilson
 
+Protected by the GNU General Public License V3
+
 24 July 2020
 24/7/20
 
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
-While the game concept is not completely ours, this entire site was written from the ground up, so the code is ours.
+While the game concept is not completely ours, this entire site was written from the ground up, so the code is entirely ours.
 
 See https://github.com/Anthony-Wilson-Programming/4DChess for the complete source code.
 -->
 
 <?php
+  $chessroot = "/tmp/4DChess";
+  
   $opponent = $_REQUEST["vs"];
   //$opponent can contain the value 0, 1 or 2
   if(!isset($opponent) || $opponent == "" || $opponent > 2 || $opponent < 0){
@@ -21,10 +25,15 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
   //$gameid must be exactly 8 characters
   if(!isset($gameid) || $gameid == "" || strlen($gameid) != 8){
     $gameid = "00000000";
+    if($opponent == 1){
+      exit("<h1 style=\"color: #eeeeee\">Game ID not supplied or invalid for online multiplayer game</h1>");
+    }
   }
   
+  $gamepath = $chessroot."/".$gameid;
+  
   $color = $_REQUEST["c"];
-  //$color can contain the value 0 or 1
+  //$color can currently contain the value 0 (white) or 1 (black)
   if(!isset($color) || $color == "" || $color > 1 || $color < 0){
     $color = 0;
   }
@@ -45,9 +54,30 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
   if($opponent == 0){
     $og_desc = "Play a local game of 4D Chess\nLayout: ".$layoutdesc[$layout];
   }else if($opponent == 1){
-    $og_desc = "Join an online game of 4D Chess\nGame ID: '".$gameid."'\nLayout: ".$layoutdesc[$layout]."\nColour: ".($color == 0 ? "Black" : "White");
+    $og_desc = "Join an online game of 4D Chess\nGame ID: '".$gameid."'\nLayout: ".$layoutdesc[$layout]."\nColour: ".($color == 0 ? "White" : "Black");
   }else{
+    $opponent = 2;
     $og_desc = "Play a game of 4D Chess against the computer\nLayout: ".$layoutdesc[$layout];
+  }
+  
+  $password = $_REQUEST["passw"];
+  if(!isset($password)){
+    $password = "";
+  }
+  
+  //Execute some extra code if the game is online multiplayer
+  if($opponent == 1){
+    
+    //Check that the password matches
+    if(file_exists($gamepath."/passw")){
+      $gamepassword = file_get_contents($gamepath."/passw");
+      if($password.PHP_EOL != $gamepassword){
+        //If the password does not match, print this out
+        exit("<h1 style=\"color: #eeeeee\">Password does not match</h1>");
+      }
+    }
+    
+    $layout = intval(file_get_contents($gamepath."/layout"));
   }
   
   $urlpath = 'http://'.$_SERVER['HTTP_HOST'].'/4DChess/Play/';
@@ -78,20 +108,23 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
     <meta property="og:image:height" content="256">
     <meta property="og:description" content="<?php echo $og_desc; ?>">
   </head>
-  <body class="up1line" onload="startRequestLoop()">
+  <body onload="startJS()">
     <div id="TitleBar">
       <h2 id="MainSubtitle">[Something went wrong. Please make sure javascript is enabled.]</h2>
       <h2 id="ColourSubtitle"></h2>
       
+      <button class="MenuButton up1line" id="HideTitleBarBtn" onclick="toggleTitleBar()">Hide Title Bar</button>
       <button class="MenuButton up1line" id="ResetBtn" onclick="resetGame()">[Debug] Reset Game</button>
       <button class="MenuButton up1line" id="ExportBtn" onclick="exportGame()">Export Game</button>
       <button class="MenuButton up1line" id="ImportBtn" onclick="importGame()">Import Game</button>
       <button class="MenuButton up1line" id="UndoBtn" onclick="undoMove()">Undo Move</button>
       
-      <div id="Debug" class="up1line">Now re-coding online multiplayer & adding the rest of the time-travel movement [26 August 2020]</div>
+      <!--div id="Debug" class="up1line">Release 1.0 scheduled for the 7th of September 2020</div-->
       
       <a id="DownloadAnchor" href="" target="_blank" hidden style="display:none"></a>
     </div>
+    
+    <div id="TitleBarUnhideButton" onclick="toggleTitleBar()" hidden><!--<img src="../Resources/UnhideTitlebar.png" alt="V">-->V</div>
     
     <div id="Game">
       <p>Something went wrong.<br>Make sure that javascript is enabled in your browser and allowed on this site and make sure to check your plugins.<br>If the problem persists, send an error ticket <a href="">here</a>.</p>
@@ -106,12 +139,18 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
       <textarea id="ImportGameTextInput" placeholder="JSON goes here"></textarea>
     </div>
     
+    <div id="FatalErrorRecovery" style="position: absolute;z-index: 1000;top: 250px;" hidden>
+      <h2>If a fatal error occured, you should be able to recover some previous game states by exporting them from the list below:</h2>
+      
+    </div>
+    
     <!-- Pass PHP variables directly to JavaScript -->
     <script>
       const gameID = "<?php echo $gameid; ?>";
-      const opponent = <?php echo $opponent; ?>;
-      const playerColor = <?php echo $color; ?>+(opponent == 0?1:0); // 0 = White, 1 = Black
-      const chosenLayout = <?php echo $layout; ?>;
+      const opponent = parseInt(<?php echo $opponent; ?>);
+      const playerColor = ((opponent == 0) ? 0 : parseInt(<?php echo $color; ?>)); // 0 = White, 1 = Black
+      const chosenLayout = parseInt(<?php echo $layout; ?>);
+      const password = "<?php echo $password; ?>";
     </script>
     <script src="game.js"></script>
   </body>

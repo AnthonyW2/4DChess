@@ -1,35 +1,37 @@
 //Code created by Anthony Wilson
 
-//Started:
+//Protected by the GNU General Public License V3
+
+// Started:
 //24 July 2020
 //24/7/20
 
-//First release:
-//? ??? 2020
-//?/?/20
+// Release 1.0:
+//7 September 2020
+//7/9/20
 
 
 
 /// TO DO:
-// Fix online multiplayer POV (specifically for White)
-// Store the dimensions of the board in the simplified object, so that you can't import game saves with differently sized boards
-// !!! Add online multiplayer capturing !!!
+// Use SVGs for the piece sprites
 // Make pawn promotion customisable
 // Check Knight time-travel moves
 // Change rook time-travel movement, calculate it in a loop instead of recursively
+// Add move confirmation to online multiplayer
 // Add per-game chat for online multiplayer
-// Fix the title bar (make it collapsable)
-// Add online multiplayer password functionality
-// ??? Use NodeJS for online multiplayer ??? (This would probably require converting everything over to nodeJS, which may be a good thing)
+// Fix online multiplayer POV (specifically for Black)
+// Add a "spectate"/"view only" mode for online multiplayer
+// Add a way to pick the amount of starting timelines
+// Add global and local game settings
 
 /// Roadmap:
 // ~ 1  - Fix current online multiplayer bugs
 // ~ 2  - Implement branching timelines (that will round out all of the "5D" functionality)
 // ~ 3  - Add "toJSON()" & "fromJSON" functions (for sending / storing the game)
 // ~ 4  - Add "Undo" functionality (by cloning the field) and export/import game functionality
-/// 5  - Add time-travel moves for the rest of the pieces
-/// 6  - Rework online multiplayer (send games as JSON, store entire game on server, make the games cheat-resistant, chat)
-// 7  - First release
+// ~ 5  - Add time-travel moves for the rest of the pieces
+// ~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, make the games cheat-resistant, chat)
+/// 7  - First release (1.0.0)
 // 8  - Add global & local game settings
 // 9  - Add computer player functionality
 // 10 - Create clients written in multiple languages (Java, C#, C++)
@@ -40,30 +42,26 @@
 
 
 
-var DEBUG = true;
-
-
-
 // -- Global variable declaration -- \\
 
-//DOM element for the entire game
+//Reference to the DOM element that contains all the other game elements
 var gameContainer = document.getElementById("Game");
 
 //Main array containing all Fields (normally only one)
 var fields = [];
 
-//An array of the stringified version of past moves
+//An array of the simplified version of past moves
 var pastMoves = [];
-//How many past moves can be stored at once (so that the page doesn't use up all of the device's memory storing previous game states) (this is forced to 1 with online multiplayer)
+//How many past moves can be stored at once (so that the page doesn't use up all of the device's memory storing previous game states)
 var pastMoveLimit = 10;
 
-//The ID path of the piece that is selected
-var selectedPiece = [undefined,undefined,undefined,undefined]; //fid,tid,bid,pid
+//Stores a reference to the currently selected piece
+var selectedPiece;
 
-//An artificial way to reposition the grid square & pieces inside the board elements
+//The width of the coloured border around a chess board
 const boardOffset = 6; //px
 
-//An array of all the elements that show where a piece can move
+//An array of all the elements that show where a piece can move (which also handle the click event which triggers a move)
 var movementVisuals = [];
 
 //The names of all the pieces
@@ -82,18 +80,6 @@ const pieceNames = [
 
 //The icon paths of all the pieces
 const pieceIconPaths = [
-  [ // Black pieces
-    "",
-    "../Resources/Pieces/64px/MasterB.png",
-    "../Resources/Pieces/64px/KingB.png",
-    "../Resources/Pieces/64px/QueenB.png",
-    "../Resources/Pieces/64px/BishopB.png",
-    "../Resources/Pieces/64px/KnightB.png",
-    "../Resources/Pieces/64px/RookB.png",
-    "../Resources/Pieces/64px/PawnB.png",
-    "", // Unicorn icon
-    ""  // Dragon icon
-  ],
   [ // White pieces
     "",
     "../Resources/Pieces/64px/MasterW.png",
@@ -103,6 +89,18 @@ const pieceIconPaths = [
     "../Resources/Pieces/64px/KnightW.png",
     "../Resources/Pieces/64px/RookW.png",
     "../Resources/Pieces/64px/PawnW.png",
+    "", // Unicorn icon
+    ""  // Dragon icon
+  ],
+  [ // Black pieces
+    "",
+    "../Resources/Pieces/64px/MasterB.png",
+    "../Resources/Pieces/64px/KingB.png",
+    "../Resources/Pieces/64px/QueenB.png",
+    "../Resources/Pieces/64px/BishopB.png",
+    "../Resources/Pieces/64px/KnightB.png",
+    "../Resources/Pieces/64px/RookB.png",
+    "../Resources/Pieces/64px/PawnB.png",
     "", // Unicorn icon
     ""  // Dragon icon
   ]
@@ -141,7 +139,7 @@ const startingLayouts = [
   ]
 ];
 
-//Layouts of the piece colors (corresponds to "startingLayouts"), 0 = Black, 1 = White
+//Layouts of the piece colors (corresponds to "startingLayouts"), 0 = White, 1 = Black
 const colorLayouts = [
   [ //0 - Standard 8x8 chess board color layout
     [1,1,1,1,1,1,1,1],
@@ -174,6 +172,8 @@ const colorLayouts = [
   ]
 ];
 
+///const startingTimelines = 1;
+
 const boardWidth = startingLayouts[chosenLayout][0].length;
 const boardHeight = startingLayouts[chosenLayout].length;
 
@@ -191,7 +191,9 @@ class Field{
     this.fullid = "F"+this.id;
     
     this.movementVisuals = [];
-    this.moveAmount = 0;
+    
+    //Store the total amount of moves, as well as the amount of moves for each player
+    this.moveAmounts = [0,0,0];
     
     this.container = document.createElement("div");
     this.container.id = this.fullid;
@@ -297,6 +299,12 @@ class Field{
     this.pastMoveContainer.appendChild(visual);
   }
   
+  //Increment this.moveAmounts[0] by 1 and do the same for the corresponding color
+  incrementMoveAmounts(color){
+    this.moveAmounts[0] += 1;
+    this.moveAmounts[1+color] += 1;
+  }
+  
   //Refresh all the visuals by removing and re-adding the HTML elements
   refreshMovementVisuals(){
     //Clear all the existing movement visual elements
@@ -317,9 +325,12 @@ class Field{
   simplify(){
     //Declare the simplified version of the field object
     var simplifiedObj = {
-      timelines: [],
+      //Using the Array.slice() function here stores a new version of the array instead of a reference to the original
+      moveAmounts: this.moveAmounts.slice(),
+      boardWidth: boardWidth,
+      boardHeight: boardHeight,
       movementVisuals: this.movementVisuals.slice(),
-      moveAmount: this.moveAmount
+      timelines: []
     };
     
     //Loop through all child timelines and get their simplified versions, then store them in the simplified parent object
@@ -350,7 +361,7 @@ class Field{
     this.container.appendChild(this.pastMoveContainer);
     
     //Restore the total amount of moves made
-    this.moveAmount = obj.moveAmount;
+    this.moveAmounts = obj.moveAmounts.slice();
     
     //Loop through the timelines of the simple object and re-initialise them in the same way (as this function)
     for(var t = 0;t < obj.timelines.length;t += 1){
@@ -387,6 +398,7 @@ class Field{
                 
                 //Set the moveAmount attribute of the new piece
                 newPiece.moveAmount = simplePiece.moveAmount;
+                newPiece.direction = simplePiece.direction;
               }
             }
           }
@@ -503,8 +515,8 @@ class Timeline{
   simplify(){
     //Declare the simplified version of the timeline object
     var simplifiedObj = {
-      boards: [],
-      active: this.active
+      active: this.active,
+      boards: []
     };
     
     //Loop through all child boards and get their simplified versions
@@ -533,7 +545,7 @@ class Board{
     
     this.pieceTypeMap = [[]];
     this.pieceIDMap = [[]];
-    this.turnColor = (this.id + 1) % 2; // 0 = Black, 1 = White
+    this.turnColor = this.id % 2; // 0 = White, 1 = Black
     this.selectable = false;
     
     this.container = document.createElement("div");
@@ -728,7 +740,7 @@ class Board{
     //Set the width & height of the board depending on its size
     this.container.style.width = 32*boardWidth+"px";
     this.container.style.height = 32*boardHeight+"px";
-    this.container.style.backgroundColor = (this.turnColor == 0)?"#101010":"#e0e0e0";
+    this.container.style.backgroundColor = (this.turnColor == 0)?"#e0e0e0":"#101010";
     
     this.gridContainer.innerHTML = "";
     
@@ -762,9 +774,9 @@ class Board{
   simplify(){
     //Declare the simplified version of the board object
     var simplifiedObj = {
-      pieces: [],
       turnColor:    this.turnColor,
-      selectable:   this.selectable
+      selectable:   this.selectable,
+      pieces: []
     };
     
     //Loop through all child pieces and get their simplified versions
@@ -777,7 +789,7 @@ class Board{
   }
 }
 
-//A single piece, usually contained by a Board object
+//A single piece, normally contained by a Board object
 class Piece{
   //Parent Board, PieceID, Type, Color
   constructor(board,id,type,color){
@@ -792,6 +804,7 @@ class Piece{
     this.type = type;
     this.color = color; // 0 = Black, 1 = White
     this.moveAmount = 0;
+    this.direction = -1; // -1 = Not set
     
     this.selected = false;
     
@@ -822,7 +835,7 @@ class Piece{
     if(s){
       //Check if the piece should be made selectable, depending on the piece color, the player color and the opponent
       if(this.color === this.parent.turnColor && (this.color === playerColor && opponent != 0 || opponent == 0)){
-        var self = this; // This may not function as intended in some cases, but it seems to work fine in Firefox 79.0 (First tested 12 Aug 2020)
+        var self = this;
         this.container.onclick = function(){
           selectPiece(self);
         };
@@ -891,6 +904,7 @@ class Piece{
       type: this.type,
       color: this.color,
       moveAmount: this.moveAmount,
+      ///direction: this.direction,
       x: this.getX(),
       y: this.getY(),
       selectable: this.selectable
@@ -905,24 +919,24 @@ class Piece{
 
 //Deselect the previous piece and select the new piece
 function selectPiece(piece){
-  if(selectedPiece[0] != undefined && fields[selectedPiece[0]].timelines[selectedPiece[1]].boards[selectedPiece[2]].pieces[selectedPiece[3]] != undefined){
-    fields[selectedPiece[0]].timelines[selectedPiece[1]].boards[selectedPiece[2]].pieces[selectedPiece[3]].deselect();
+  if(selectedPiece != undefined){
+    selectedPiece.deselect();
   }
   if(piece.parent.id < piece.parent.parent.boards.length-1){
     console.warn("Huh, that's strange. Is this code modified in any way? If not, you should contact the site admin tell them how to reproduce this warning, because it should never happen.");
     alert("Is this code modified in any way?\nIf not, you should contact the site admin tell them how to reproduce this alert, because it should never happen.\nUntil this is fixed, you probably shouldn't exploit it.");
   }
   piece.select();
-  selectedPiece = [piece.fid,piece.tid,piece.bid,piece.id];
+  selectedPiece = piece;
   getAvailableMoves(piece);
 }
 
 //Deselect the previous piece and select the new piece
 function globalDeselect(){
-  if(selectedPiece[0] != undefined && fields[selectedPiece[0]].timelines[selectedPiece[1]].boards[selectedPiece[2]].pieces[selectedPiece[3]] != undefined){
-    fields[selectedPiece[0]].timelines[selectedPiece[1]].boards[selectedPiece[2]].pieces[selectedPiece[3]].deselect();
+  if(selectedPiece != undefined){
+    selectedPiece.deselect();
   }
-  selectedPiece = [undefined,undefined,undefined,undefined];
+  selectedPiece = undefined;
   
   for(var a = 0;a < movementVisuals.length;a += 1){
     if(movementVisuals[a] != undefined){
@@ -939,7 +953,7 @@ function movePiece(piece,x,y,board = undefined){
   }
   
   //Increment the total amount of moves in the field
-  piece.parent.parent.parent.moveAmount += 1;
+  piece.parent.parent.parent.incrementMoveAmounts(piece.color);
   
   if(piece.parent == board){
     //Update the piece maps
@@ -1053,7 +1067,7 @@ function getAvailableMoves(piece){
         
         //If the game is online multiplayer, send the move to the server
         if(opponent == 1){
-          sendMove(piece,x,y);
+          requestMoves();
         }
       });
     }
@@ -1132,6 +1146,11 @@ function getAvailableMoves(piece){
         //Move the capturing piece to its new position
         movePiece(newboard1.pieces[piece1.id],piece2.getX(),piece2.getY(),newboard2);
       }
+      
+      //If the game is online multiplayer, send the move to the server
+      if(opponent == 1){
+        requestMoves();
+      }
     });
   }
   
@@ -1150,6 +1169,65 @@ function getAvailableMoves(piece){
       }
     }
     return false;
+  }
+  
+  //A recursive function to check for all moves in a given direction (4D vector)
+  function checkMovesRecursively(board,directions,_x,_y){
+    //directions = [x,y,b,t];
+    
+    if(_x >= 0 && _x < boardWidth && _y >= 0 && _y < boardHeight){
+      
+      //Add the movement visual depending on if the space is blocked or not
+      if(board.pieceTypeMap[_y][_x] == 0){
+        
+        addMoveVisual(movementVisuals.length,_x,_y,false,board);
+        
+        //Execute the function recursively in the same direction for the next board in line
+        if(checkForBoard(directions[2]*2,directions[3],board)){
+          var nextboard = board.parent.parent.timelines[board.tid+directions[3]].boards[board.id+directions[2]*2];
+          
+          checkMovesRecursively(nextboard,directions,_x+directions[0],_y+directions[1]);
+        }
+        
+      }else{
+        if(board.pieces[ board.pieceIDMap[_y][_x] ].color != piece.color){
+          addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[_y][_x] ]);
+        }else{
+          addMoveVisual(movementVisuals.length,_x,_y,true,board);
+        }
+      }
+    }
+  }
+  
+  //Create a recursive function to check for the time-travel moves of a rook
+  function checkRookMove(board,direction){
+    //Add the movement visual depending on if the space is blocked or not
+    if(board.pieceTypeMap[py][px] == 0){
+      addMoveVisual(movementVisuals.length,px,py,false,board);
+      
+      //Execute the function recursively in the same direction, but for the next board in line
+      if(direction < 2){
+        //Check for a board to the left/right of the supplied one
+        if(checkForBoard(2-(direction%2)*4,0,board)){
+          var nextboard = board.parent.boards[board.id+2-(direction%2)*4];
+          
+          checkRookMove(nextboard,direction);
+        }
+      }else{
+        //Check for a board above/below the supplied one
+        if(checkForBoard(0,1-(direction%2)*2,board)){
+          var nextboard = board.parent.parent.timelines[board.parent.id+1-(direction%2)*2].boards[board.id];
+          
+          checkRookMove(nextboard,direction);
+        }
+      }
+    }else{
+      if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
+        addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ]);
+      }else{
+        addMoveVisual(movementVisuals.length,px,py,true,board);
+      }
+    }
   }
   
   //Check for the type of piece, and add movement visuals depending on how the piece moves
@@ -1207,12 +1285,12 @@ function getAvailableMoves(piece){
       for(var a = 0;a < spaces.length;a += 1){
         if(px+spaces[a][0] >= 0 && py+spaces[a][1] >= 0 && px+spaces[a][0] < boardWidth && py+spaces[a][1] < boardHeight){
           if(piece.parent.pieceTypeMap[ py+spaces[a][1] ][ px+spaces[a][0] ] == 0){
-            addMoveVisual(a,px+spaces[a][0],py+spaces[a][1],false);
+            addMoveVisual(movementVisuals.length,px+spaces[a][0],py+spaces[a][1],false);
           }else{
             if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+spaces[a][1] ][ px+spaces[a][0] ] ].color != piece.color){
-              addCaptureVisual(a,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+spaces[a][1] ][ px+spaces[a][0] ] ]);
+              addCaptureVisual(movementVisuals.length,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+spaces[a][1] ][ px+spaces[a][0] ] ]);
             }else{
-              addMoveVisual(a,px+spaces[a][0],py+spaces[a][1],true);
+              addMoveVisual(movementVisuals.length,px+spaces[a][0],py+spaces[a][1],true);
             }
           }
         }
@@ -1410,11 +1488,77 @@ function getAvailableMoves(piece){
         }
       }
       
+      //Time travel directions
+      var directs = [
+        //Rook directions:
+        [0,0,0,-1],
+        [0,0,0,1],
+        [0,0,-1,0],
+        [0,0,1,0],
+        
+        //Bishop directions:
+        [0,0,-1,-1],
+        [0,0,1,-1],
+        [0,0,-1,1],
+        [0,0,1,1],
+        
+        [-1,0,-1,0],
+        [0,-1,-1,0],
+        [1,0,-1,0],
+        [0,1,-1,0],
+        
+        [-1,0,1,0],
+        [0,-1,1,0],
+        [1,0,1,0],
+        [0,1,1,0],
+        
+        [-1,0,0,-1],
+        [0,-1,0,-1],
+        [1,0,0,-1],
+        [0,1,0,-1],
+        
+        [-1,0,0,1],
+        [0,-1,0,1],
+        [1,0,0,1],
+        [0,1,0,1],
+        
+        //Queen-exclusive directions:
+        [-1,-1,-1,0],
+        [1,-1,-1,0],
+        [-1,1,-1,0],
+        [1,1,-1,0],
+        
+        [-1,-1,1,0],
+        [1,-1,1,0],
+        [-1,1,1,0],
+        [1,1,1,0],
+        
+        [-1,-1,0,-1],
+        [1,-1,0,-1],
+        [-1,1,0,-1],
+        [1,1,0,-1],
+        
+        [-1,-1,0,1],
+        [1,-1,0,1],
+        [-1,1,0,1],
+        [1,1,0,1]
+      ];
+      
+      for(var a = 0;a < directs.length;a += 1){
+        
+        //Execute the function recursively in the same direction for the next board in line
+        if(checkForBoard(directs[a][2]*2,directs[a][3],piece.parent)){
+          var nextboard = piece.parent.parent.parent.timelines[piece.parent.tid+directs[a][3]].boards[piece.parent.id+directs[a][2]*2];
+          
+          checkMovesRecursively(nextboard,directs[a],px+directs[a][0],py+directs[a][1]);
+        }
+      }
+      
       break;
     case 4:
       //The Bishop moves up/down one square and sideways one square (making a diagonal move) by an unlimited amount of spaces
       
-      //The code below practically unreadable. I wouldn't blame you for not understanding it, so I have an expanded version of the below loop on GitHub (in 'Alternate Code/Bishop.js')
+      //I have an expanded version of the loop below on GitHub (in 'Alternate Code/Bishop.js')
       
       //Loop through the 4 cardinal directions (0 = Down-Left/South-East, 2 = Down-Right/South-West, 3 = Up-Left/North-East, 4 = Up-Right/North-West)
       for(var dir = 0;dir < 4;dir += 1){
@@ -1446,6 +1590,43 @@ function getAvailableMoves(piece){
                 addMoveVisual(movementVisuals.length,_x,_y,true);
             }
           }
+        }
+      }
+      
+      var directs = [
+        [0,0,-1,-1],
+        [0,0,1,-1],
+        [0,0,-1,1],
+        [0,0,1,1],
+        
+        [-1,0,-1,0],
+        [0,-1,-1,0],
+        [1,0,-1,0],
+        [0,1,-1,0],
+        
+        [-1,0,1,0],
+        [0,-1,1,0],
+        [1,0,1,0],
+        [0,1,1,0],
+        
+        [-1,0,0,-1],
+        [0,-1,0,-1],
+        [1,0,0,-1],
+        [0,1,0,-1],
+        
+        [-1,0,0,1],
+        [0,-1,0,1],
+        [1,0,0,1],
+        [0,1,0,1]
+      ];
+      
+      //Loop through all the directions and execute the recursive move-checking function for each
+      for(var a = 0;a < directs.length;a += 1){
+        //Execute the function recursively in the same direction for the next board in line
+        if(checkForBoard(directs[a][2]*2,directs[a][3],piece.parent)){
+          var nextboard = piece.parent.parent.parent.timelines[piece.parent.tid+directs[a][3]].boards[piece.parent.id+directs[a][2]*2];
+          
+          checkMovesRecursively(nextboard,directs[a],px+directs[a][0],py+directs[a][1]);
         }
       }
       
@@ -1574,6 +1755,8 @@ function getAvailableMoves(piece){
       
       //The code below practically unreadable. I wouldn't blame you for not understanding it, so I have an expanded version of the below loop on GitHub (in 'Alternate Code/Rook.js')
       
+      /// Leaving the possibility of converting the time-travel move calculation from a recursive function to a loop
+      
       ///var fieldwidth = 0;
       ///for(var a = 0;a < piece.parent.parent.parent.timelines.length;a += 1){
       ///  if(piece.parent.parent.parent.timelines[a] != undefined && piece.parent.parent.parent.timelines[a].boards.length > fieldwidth){
@@ -1582,38 +1765,6 @@ function getAvailableMoves(piece){
       ///}
       ///
       ///var timetravelBlocked = 0;
-      
-      //Create a recursive function to check for the time-travel moves of the rook
-      function checkRookMove(board,direction){
-        //Add the movement visual depending on if the space is blocked or not
-        if(board.pieceTypeMap[py][px] == 0){
-          addMoveVisual(movementVisuals.length,px,py,false,board);
-          
-          //Execute the function recursively in the same direction, but for the next board in line
-          if(direction < 2){
-            //Check for a board to the left/right of the supplied one
-            if(checkForBoard(2-(direction%2)*4,0,board)){
-              var nextboard = board.parent.boards[board.id+2-(direction%2)*4];
-              
-              checkRookMove(nextboard,direction);
-            }
-          }else{
-            //Check for a board above/below the supplied one
-            if(checkForBoard(0,1-(direction%2)*2,board)){
-              var nextboard = board.parent.parent.timelines[board.parent.id+1-(direction%2)*2].boards[board.id];
-              
-              checkRookMove(nextboard,direction);
-            }
-          }
-        }else{
-          if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
-            addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ]);
-          }else{
-            addMoveVisual(movementVisuals.length,px,py,true,board);
-          }
-        }
-      }
-      
       
       //Loop through the 4 cardinal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
       for(var dir = 0;dir < 4;dir += 1){
@@ -1662,59 +1813,82 @@ function getAvailableMoves(piece){
             checkRookMove(nextboard,dir);
           }
         }
+        
+        ///if(checkForBoard(2-(dir%2)*4,1-(Math.floor(dir/2)%2)*2)){
+        ///  var nextboard = piece.parent.parent.parent.timelines[piece.parent.parent.id+1-(Math.floor(dir/2)%2)*2].boards[piece.parent.id+2-(dir%2)*4];
+        ///  
+        ///  //checkRookMove(nextboard,dir);
+        ///  checkMovesRecursively(nextboard,[0,0,1-(dir%2)*2,1-(floor(dir/2)%2)*2],px,py);
+        ///}
       }
       
       break;
     case 7:
       //Pawns can move forward by one (or forward by 2 if it's their first move). They can take forward-diagonally.
       
-      var a = 1;
-      //Test whether the piece should move updard or downward (relative to the player's view)
-      if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
-        a = -1;
+      //The movement direction of the pawn
+      var dir = 1;
+      
+      if(piece.direction == -1 || piece.direction == undefined){
+        //Test whether the piece should move updard or downward (relative to the player's view)
+        if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
+          dir = -1;
+        }
+      }else{
+        if(piece.direction < 2){
+          // Direction 0 = White
+          dir = (piece.direction == 0?-1:1);
+        }else{
+          /// Yet to implement
+          
+          /// Placeholder
+          if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
+            dir = -1;
+          }
+        }
       }
       
       //Make sure that the pawn is not at the end of the board, but allow for the pawn to be at the very back (for custom layouts)
-      if((py+a >= 0 || a == 1) && (py+a < boardHeight || a == -1)){
+      if((py+dir >= 0 || dir == 1) && (py+dir < boardHeight || dir == -1)){
         //Allow the piece to move forward by one space if available
-        if(piece.parent.pieceTypeMap[ py+a ][ px ] == 0){
-          addMoveVisual(0,px,py+a,false);
+        if(piece.parent.pieceTypeMap[ py+dir ][ px ] == 0){
+          addMoveVisual(0,px,py+dir,false);
         }else{
-          addMoveVisual(0,px,py+a,true);
+          addMoveVisual(0,px,py+dir,true);
         }
         
         //Allow the piece to capture on the forward-right diagonal
         if(px+1 < boardWidth){
-          if(piece.parent.pieceTypeMap[ py+a ][ px+1 ] != 0){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+1 ] ].color != piece.color){
-              addCaptureVisual(2,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px+1 ] ]);
+          if(piece.parent.pieceTypeMap[ py+dir ][ px+1 ] != 0){
+            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+dir ][ px+1 ] ].color != piece.color){
+              addCaptureVisual(2,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+dir ][ px+1 ] ]);
             }else{
-              addMoveVisual(2,px+1,py+a,true);
+              addMoveVisual(2,px+1,py+dir,true);
             }
           }else{
-            addMoveVisual(2,px+1,py+a,true);
+            addMoveVisual(2,px+1,py+dir,true);
           }
         }
         
         //Allow the piece to capture on the forward-left diagonal
         if(px-1 >= 0){
-          if(piece.parent.pieceTypeMap[ py+a ][ px-1 ] != 0){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-1 ] ].color != piece.color){
-              addCaptureVisual(3,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+a ][ px-1 ] ]);
+          if(piece.parent.pieceTypeMap[ py+dir ][ px-1 ] != 0){
+            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+dir ][ px-1 ] ].color != piece.color){
+              addCaptureVisual(3,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+dir ][ px-1 ] ]);
             }else{
-              addMoveVisual(3,px-1,py+a,true);
+              addMoveVisual(3,px-1,py+dir,true);
             }
           }else{
-            addMoveVisual(3,px-1,py+a,true);
+            addMoveVisual(3,px-1,py+dir,true);
           }
         }
         
         //If it's the piece's first move, allow it to move one extra space forward
         if(piece.moveAmount == 0){
-          if(piece.parent.pieceTypeMap[ py+a ][ px ] == 0 && piece.parent.pieceTypeMap[ py+a*2 ][ px ] == 0){
-            addMoveVisual(1,px,py+a*2,false);
+          if(piece.parent.pieceTypeMap[ py+dir ][ px ] == 0 && piece.parent.pieceTypeMap[ py+dir*2 ][ px ] == 0){
+            addMoveVisual(1,px,py+dir*2,false);
           }else{
-            addMoveVisual(1,px,py+a*2,true);
+            addMoveVisual(1,px,py+dir*2,true);
           }
         }
       }else{
@@ -1724,10 +1898,10 @@ function getAvailableMoves(piece){
       //For time-travel, do the same thing as above, but for boards instead of tiles (With a lot of extra checks for the existence of boards)
       
       //Check that the pawn has another timeline in front of it to move to
-      if(piece.parent.parent.id+a >= 0 && piece.parent.parent.id+a < piece.parent.parent.parent.timelines.length){
+      if(piece.parent.parent.id+dir >= 0 && piece.parent.parent.id+dir < piece.parent.parent.parent.timelines.length){
         //Allow the piece to move up by one board if available
-        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id] != undefined){
-          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id];
+        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id] != undefined){
+          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id];
           
           if(board.pieceTypeMap[py][px] == 0){
             addMoveVisual(movementVisuals.length,px,py,false,board);
@@ -1737,8 +1911,8 @@ function getAvailableMoves(piece){
         }
         
         //Allow the piece to capture on the forward-right diagonal
-        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id+2] != undefined){
-          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id+2];
+        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id+2] != undefined){
+          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id+2];
           
           if(board.pieceTypeMap[py][px] != 0){
             if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
@@ -1752,8 +1926,8 @@ function getAvailableMoves(piece){
         }
         
         //Allow the piece to capture on the forward-left diagonal
-        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id-2] != undefined){
-          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id-2];
+        if(piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id-2] != undefined){
+          var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id-2];
           
           if(board.pieceTypeMap[py][px] != 0){
             if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
@@ -1770,15 +1944,15 @@ function getAvailableMoves(piece){
       //If it's the piece's first move, allow it to jump one extra board forward
       if(piece.moveAmount == 0){
         //Check for the presence of a valid board 2 boards in front of the pawn
-        if(piece.parent.parent.id+a*2 >= 0 && piece.parent.parent.id+a*2 < piece.parent.parent.parent.timelines.length){
-          if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a*2].boards[piece.parent.id] != undefined){
+        if(piece.parent.parent.id+dir*2 >= 0 && piece.parent.parent.id+dir*2 < piece.parent.parent.parent.timelines.length){
+          if(piece.parent.parent.parent.timelines[piece.parent.parent.id+dir*2].boards[piece.parent.id] != undefined){
             //Store the new board in a variable to make it quicker to access
-            var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+a*2].boards[piece.parent.id];
+            var board = piece.parent.parent.parent.timelines[piece.parent.parent.id+dir*2].boards[piece.parent.id];
             
             //Check for the presence of a valid board 1 board in front of the pawn
-            if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id] != undefined){
+            if(piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id] != undefined){
               //Check that the middle board has a free space for the pawn to jump across
-              if(piece.parent.parent.parent.timelines[piece.parent.parent.id+a].boards[piece.parent.id].pieceTypeMap[py][px] == 0){
+              if(piece.parent.parent.parent.timelines[piece.parent.parent.id+dir].boards[piece.parent.id].pieceTypeMap[py][px] == 0){
                 
                 if(board.pieceTypeMap[py][px] == 0){
                   addMoveVisual(movementVisuals.length,px,py,false,board);
@@ -1849,27 +2023,27 @@ function resetGame(){
 function storePastMove(){
   //If the amount of stored game states exceeds the limit, remove the one [limit] moves old
   if(pastMoves.length >= pastMoveLimit){
-    pastMoves[fields[0].moveAmount-pastMoveLimit] = undefined;
+    pastMoves[fields[0].moveAmounts[0]-pastMoveLimit] = undefined;
   }
   
   //Add the simplified version of the current (soon to be previous) game state (which is just field 0)
-  pastMoves[fields[0].moveAmount] = fields[0].simplify();
+  pastMoves[fields[0].moveAmounts[0]] = fields[0].simplify();
 }
 
 //Revert the game to a previous game state
 function undoMove(){
-  var prevMove = fields[0].moveAmount-1;
+  var prevMove = fields[0].moveAmounts[0]-1;
   
-  if(fields[0].moveAmount == 0){
+  if(fields[0].moveAmounts[0] == 0){
     console.log("Cannot undo move");
     return;
   }
-  if(pastMoves.length != fields[0].moveAmount){
+  if(pastMoves.length != fields[0].moveAmounts[0]){
     console.warn("Warning: Amount of previous moves stored doesn't match current total moves");
   }
   
   if(pastMoves[prevMove] == undefined){
-    console.warn("Waring: Previous move not available");
+    console.warn("Warning: Previous move not available");
     alert("Previous move unavailable");
     return;
   }
@@ -1894,70 +2068,68 @@ function win(player){
 
 //Deliberatly throw an error in case of critical failure (stop execution & make the error clear to the end-user)
 function throwError(err){
+  //Get the recovery element from the DOM and make it visible
+  var recoveryElement = document.getElementById("FatalErrorRecovery");
+  recoveryElement.hidden = false;
+  
+  //Loop through all the previous moves of the game
+  for(var a = 0;a < pastMoves.length;a += 1){
+    if(pastMoves[a] != undefined){
+      //Create a button to export the desired game state
+      var recoveryButton = document.createElement("button");
+      recoveryButton.innerHTML = "Move "+a;
+      
+      //Assign the value of the button as the ID of the game state
+      recoveryButton.value = a;
+      
+      //Add the function to export the game state as the click event for the button
+      recoveryButton.addEventListener("click",function(event){
+        //Get the ID of the game state from the name target element (recoveryButton)
+        var gamestate = parseInt(event.currentTarget.value);
+        
+        var simplified = pastMoves[gamestate];
+        
+        //Store the the JSON text in a URI encoded 
+        var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified,null,2));
+        
+        //Get the download anchor element
+        var downloadAnchor = document.createElement("a");
+        downloadAnchor.hidden = true;
+        recoveryElement.appendChild(downloadAnchor);
+        
+        //Set the necessary attributes of the download anchor element so that it will initialise a download when clicked
+        downloadAnchor.href = dataString;
+        downloadAnchor.download = "4D Chess Game State (Move "+gamestate+").json";
+        
+        //Artificially "click" the download anchor element
+        downloadAnchor.click();
+        
+        console.log("Exported a previous game state (move "+gamestate+") as JSON");
+      });
+      
+      recoveryElement.appendChild(recoveryButton);
+      recoveryElement.appendChild(document.createElement("br"));
+    }
+  }
+  
   document.getElementById("MainSubtitle").innerHTML = err;
   document.getElementById("MainSubtitle").style.color = "#ff0000";
   gameContainer.innerHTML = "";
   throw new Error(err);
 }
 
-
-
-// -- Stuff to execute straight away -- \\
-
-if(opponent == 0){
-  //Opponent 0 = Local multiplayer
-  
-  document.getElementById("MainSubtitle").innerHTML = "Local Multiplayer";
-  document.getElementById("ColourSubtitle").innerHTML = "";
-  
-  newGame();
-  
-}else if(opponent == 1){
-  //Opponent 1 = Online multiplayer
-  
-  //Make sure the game ID is valid
-  if(gameID == "00000000"){
-    throwError("Invalid game ID");
-  }
-  //Make an asynchronous request to the server, confirming that a game with the current game ID exists
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.onreadystatechange = function(){
-    if(this.readyState == 4 && this.status == 200){
-      //Error code 1 
-      if(this.responseText == 1){
-        throwError("Invalid game ID");
-      }
-    }
-  };
-  xmlhttp.open("GET","../Server/getLiveGameFromID.php?id="+gameID,true);
-  xmlhttp.send();
-  
-  //Set the main text in the titlebar to something relevant
-  document.getElementById("MainSubtitle").innerHTML = "Online Multiplayer - Game ID: "+gameID;
-  
-  //Set the secondary text in the titlebar to the player's colo(u)r (I really dislike the two spellings of colo(u)r)
-  if(playerColor == 0){
-    document.getElementById("ColourSubtitle").innerHTML = "Colour: Black";
+//Hide/unhide the title bar
+function toggleTitleBar(){
+  var titleBar = document.getElementById("TitleBar");
+  if(titleBar.hidden){
+    titleBar.hidden = false;
+    document.getElementById("TitleBarUnhideButton").hidden = true;
+    gameContainer.style.top = "10rem";
   }else{
-    document.getElementById("ColourSubtitle").innerHTML = "Colour: White";
+    titleBar.hidden = true;
+    document.getElementById("TitleBarUnhideButton").hidden = false;
+    gameContainer.style.top = "0rem";
   }
-  
-  newGame();
-  
-}else{
-  //Opponent 2 = VS computer
-  
-  //Set the main text in the titlebar to something relevant
-  document.getElementById("MainSubtitle").innerHTML = "Versus Computer";
-  
-  //Set the secondary text in the titlebar to the player's colo(u)r
-  if(playerColor == 0){
-    document.getElementById("ColourSubtitle").innerHTML = "Colour: Black";
-  }else{
-    document.getElementById("ColourSubtitle").innerHTML = "Colour: White";
-  }
-  
-  newGame();
 }
 
 
@@ -1994,15 +2166,24 @@ function importGame(){
     //Get the string stored in the input textarea
     var JSONString = document.getElementById("ImportGameTextInput").value;
     
+    var importedObject;
+    
     //Make sure the text string is long enough and is valid JSON data
     if(JSONString.length < 10){
       console.warn("Warning: Not enough text submitted");
       return;
     }
     try{
-      JSON.parse(JSONString);
+      //Convert the JSON string into a usable object
+      importedObject = JSON.parse(JSONString);
     }catch(e){
       console.warn("Warning: Invalid JSON data submitted");
+      return;
+    }
+    
+    if(importedObject.boardWidth != boardWidth || importedObject.boardHeight != boardHeight){
+      console.warn("Board width/height of imported game does not match that of the current game");
+      alert("Board width/height of imported game does not match that of the current game\nCurrent game: "+boardWidth+"x"+boardHeight+"\nImported game: "+importedObject.boardWidth+"x"+importedObject.boardHeight);
       return;
     }
     
@@ -2011,9 +2192,9 @@ function importGame(){
     //Create a new filed
     fields[0] = new Field(0);
     //Recreate the new field from the imported JSON data
-    fields[0].fromSimpleObject(JSON.parse(JSONString));
+    fields[0].fromSimpleObject(importedObject);
     
-    for(var a = 0;a < fields[0].moveAmount;a += 1){
+    for(var a = 0;a < fields[0].moveAmounts[0];a += 1){
       pastMoves[a] = undefined;
     }
     
@@ -2055,50 +2236,9 @@ document.getElementById("ImportGameFileInput").addEventListener("change", import
 
 
 
-// -- Network stuff for communicating with the server (only used with online multiplayer) -- \\
+// -- Network stuff for communicating with the server (only used for online multiplayer) -- \\
 
-///Most of this will be majorly changed in the future
-
-//Send the player's move to the server
-function sendMove(piece,x,y,board = undefined){
-  var moveString = "F"+piece.fid+"-T"+piece.tid+"-B"+piece.bid+"-X"+x+"-Y"+y;
-  
-  if(board != undefined){
-    moveString = "F"+piece.fid+"-T"+piece.tid+"-B"+board.id+"-X"+x+"-Y"+y;
-  }
-  
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.onreadystatechange = function(){
-    if(this.readyState == 4 && this.status == 200){
-      switch(parseInt(this.responseText)){
-        case 0:
-          console.log("Successfully sent the move to the server");
-          break;
-        case 1:
-          throwError("This game no longer exists");
-          break;
-        case 2:
-          throwError("Invalid player colour when sending move to server (this should never happen)");
-          break;
-        case 3:
-          throwError("Piece either invalid or not set when sending move to server");
-          break;
-        case 4:
-          throwError("New piece location either invalid or not set when sending move to server");
-          break;
-        case 5:
-          throwError("Server-side write error, please contact the system admin");
-          break;
-        default:
-          throwError("An unkown error occurred while sending your move to the server");
-      }
-    }
-  };
-  xmlhttp.open("GET","../Server/storeMove.php?id="+gameID+"&c="+playerColor+"&p="+piece.fullid+"&m="+moveString,true);
-  xmlhttp.send();
-}
-
-//This function will be executed every ~1 second
+//Request the amounts of moves from the server-side game and sync to/from the server accordingly
 function requestMoves(){
   //Make an asynchronous request to the server which will return all of the specified player's moves (This will be changed in the future)
   var xmlhttp = new XMLHttpRequest();
@@ -2107,69 +2247,224 @@ function requestMoves(){
       if(this.responseText == "err_1"){
         //Tell the player that the game no longer exists on the server if this error is recieved
         throwError("This game no longer exists");
+      }else if(this.responseText == "err_2"){
+        //Password detected as incorrect when requesting the amounts of moves
+        throwError("Password detected as incorrect");
+      }else if(this.responseText == "err_3"){
+        //Throw an error if the "moves" file is missing from the server
+        throwError("A server-side error occurred: \"moves\" file missing from game");
       }else{
-        //Split the move string into 2 parts (the piece and the new location)
-        var allMoves = this.responseText.split("\n");
-        if(allMoves.length > 1 && allMoves[0] != "" && allMoves[0] != undefined){
-          for(var a = 0;a < allMoves.length-1;a += 1){
-            //Check that the string is not empty
-            if(allMoves[a] != ""){
-              //Split the piece ID part of the string and get the corresponding object
-              var pieceFullID = allMoves[a].split("_")[0].split("-");
-              for(var b = 0;b < 4;b += 1){
-                pieceFullID[b] = parseInt(pieceFullID[b].substr(1,pieceFullID[b].length-1));
-              }
-              var piece = fields[ pieceFullID[0] ].timelines[pieceFullID[1]].boards[ pieceFullID[2] ].pieces[ pieceFullID[3] ];
-              
-              //Split the movement part of the string and store the new position
-              var movePos = allMoves[a].split("_")[1].split("-");
-              for(var b = 0;b < 5;b += 1){
-                movePos[b] = parseInt(movePos[b].substr(1,movePos[b].length-1));
-              }
-              var newX = movePos[3];
-              var newY = movePos[4];
-              
-              //Get the new board that the piece will move to (this is only used if the piece time travels)
-              var board = fields[ movePos[0] ].timelines[ movePos[1] ].boards[ movePos[2] ];
-              
-              //Make sure that the piece is on a valid board to be moved
-              if(piece.parent.id == piece.parent.parent.boards.length-1){
-                //Check if the piece travelled through time
-                if(piece.parent == board){
-                  console.log("Moved opponent's piece");
-                  //Create a new board when the piece is moved
-                  var newboard = piece.parent.extendTimeline();
-                  
-                  //Confirm that the new board was successfully created
-                  if(newboard != undefined){
-                    //Move the piece (The one on the new instance of the board, not the original)
-                    movePiece(newboard.pieces[piece.id],newX,newY);
-                  }else{
-                    throwError("An error occurred when trying to extend the timeline, please contact the system admin");
-                  }
-                }else{
-                  /// Move the piece to a new board (yet to be implemented)
-                }
-              }else{
-                console.warn("Attempted move of piece in the past");
-              }
-            }
+        var serverMoveAmounts = JSON.parse(this.responseText);
+        
+        if(serverMoveAmounts[0] == -1){
+          console.log("Performing first server-sync of the game");
+          syncGameToServer();
+        }else{
+          if(fields[0].moveAmounts[0] < serverMoveAmounts[0] || fields[0].moveAmounts[((playerColor+1)%2)+1] < serverMoveAmounts[((playerColor+1)%2)+1]){
+            //Store the current game state as the previous move
+            storePastMove();
+            
+            syncGameFromServer();
+          }else if(fields[0].moveAmounts[0] > serverMoveAmounts[0] || fields[0].moveAmounts[playerColor+1] > serverMoveAmounts[playerColor+1]){
+            syncGameToServer();
           }
         }
       }
     }
   };
-  xmlhttp.open("GET","../Server/requestMoves.php?id="+gameID+"&c="+((playerColor+1)%2),true);
-  xmlhttp.send();
   
-  console.log("Checked for moves...");
-  setTimeout(requestMoves,2000);
+  if(password == "" || password == undefined){
+    xmlhttp.open("GET","../Server/checkMoves.php?id="+gameID,true);
+    xmlhttp.send();
+  }else{
+    xmlhttp.open("POST","../Server/checkMoves.php?id="+gameID,true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("passw="+password);
+  }
 }
 
-//Called by the "onload()" function of a the body element, which starts the requestMoves() loop
-function startRequestLoop(){
-  if(opponent == 1){
-    ///setTimeout(requestMoves,1000);
+//Pull down the current online multiplayr game from the server and replace the client's game with that
+function syncGameFromServer(){
+  //Make an asynchronous request to the server which will return all of the specified player's moves (This will be changed in the future)
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function(){
+    if(this.readyState == 4 && this.status == 200){
+      if(this.responseText == "err_1"){
+        //Tell the player that the game no longer exists on the server if this error is recieved
+        throwError("This game no longer exists");
+      }else if(this.responseText == "err_2"){
+        //Password detected as incorrect when requesting the amounts of moves
+        throwError("Password detected as incorrect");
+      }else{
+        var serverObject;
+        
+        //Make sure the text string is long enough and is valid JSON data
+        if(this.responseText.length < 10){
+          console.warn("Warning: Didn't recieve long enough JSON string from server");
+          
+          //Perform a sync to the server
+          syncGameToServer();
+          
+          return;
+        }
+        try{
+          //Convert the JSON string into a usable object
+          serverObject = JSON.parse(this.responseText);
+        }catch(e){
+          console.warn("Warning: Recieved invalid JSON data from server");
+          
+          //Perform a sync to the server
+          syncGameToServer();
+          
+          return;
+        }
+        
+        if(serverObject.boardWidth != boardWidth || serverObject.boardHeight != boardHeight){
+          throwError("Board width/height of server-side game does not match that of the current game\nCurrent game: "+boardWidth+"x"+boardHeight+"\nImported game: "+importedObject.boardWidth+"x"+importedObject.boardHeight);
+          return;
+        }
+        
+        //Remove the contents of the current game
+        fields[0].container.remove();
+        //Create a new filed
+        fields[0] = new Field(0);
+        //Recreate the new field from the imported JSON data
+        fields[0].fromSimpleObject(serverObject);
+        
+        for(var a = 0;a < fields[0].moveAmounts[0];a += 1){
+          pastMoves[a] = undefined;
+        }
+        
+        console.log("Successfully synced game from server");
+      }
+    }
+  };
+  if(password == "" || password == undefined){
+    xmlhttp.open("GET","../Server/getGameState.php?id="+gameID,true);
+    xmlhttp.send();
+  }else{
+    xmlhttp.open("POST","../Server/getGameState.php?id="+gameID,true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("passw="+password);
+  }
+}
+
+//Send the client's game data to the server
+function syncGameToServer(){
+  //Make an asynchronous request to the server which will return all of the specified player's moves (This will be changed in the future)
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function(){
+    if(this.readyState == 4 && this.status == 200){
+      
+      if(parseInt(this.responseText) == 0){
+        console.log("Successfully synced game to server");
+      }else if(parseInt(this.responseText) == 1){
+        //Tell the player that the game no longer exists on the server if this error is recieved
+        throwError("This game no longer exists");
+        
+      }else if(parseInt(this.responseText) == 2){
+        //Password detected as incorrect when requesting the amounts of moves
+        throwError("Password detected as incorrect");
+        
+      }else{
+        console.log(this.responseText);
+        
+        throwError("An unknown server-side error occurred");
+      }
+    }
+  };
+  
+  var JSONString = JSON.stringify(fields[0].simplify());
+  
+  if(password == "" || password == undefined){
+    xmlhttp.open("POST","../Server/storeGameState.php?id="+gameID,true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("gamedata="+JSONString);
+  }else{
+    xmlhttp.open("POST","../Server/storeGameState.php?id="+gameID,true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("passw="+password+"&gamedata="+JSONString);
+  }
+}
+
+//Pull down the chat messages from the server
+function syncChat(){
+  
+}
+
+//Every 2 seconds, sync the current online multiplayer game with the server
+function routineServerSync(){
+  requestMoves();
+  
+  syncChat();
+  
+  setTimeout(routineServerSync,2000);
+}
+
+
+
+// -- Executed on page load -- \\
+
+//Called by the "onload()" function of a the body element, which calls the functions to start a game
+function startJS(){
+  if(opponent == 0){
+    //[Opponent 0] - Local multiplayer
+    
+    document.getElementById("MainSubtitle").innerHTML = "Local Multiplayer";
+    document.getElementById("ColourSubtitle").innerHTML = "";
+    
+    newGame();
+    
+  }else if(opponent == 1){
+    //[Opponent 1] - Online multiplayer
+    
+    //Make sure the game ID is valid
+    if(gameID == "00000000"){
+      throwError("Invalid game ID");
+    }
+    //Make an asynchronous request to the server, confirming that a game with the current game ID exists
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function(){
+      if(this.readyState == 4 && this.status == 200){
+        //Error code 1 
+        if(this.responseText == 1){
+          throwError("Invalid game ID");
+        }
+      }
+    };
+    xmlhttp.open("GET","../Server/confirmGameExists.php?id="+gameID,true);
+    xmlhttp.send();
+    
+    //Set the main text in the titlebar to something relevant
+    document.getElementById("MainSubtitle").innerHTML = "Online Multiplayer - Game ID: "+gameID;
+    
+    //Set the secondary text in the titlebar to the player's colo(u)r (I really dislike having two different spellings of colour)
+    if(playerColor == 0){
+      document.getElementById("ColourSubtitle").innerHTML = "Colour: White";
+    }else{
+      document.getElementById("ColourSubtitle").innerHTML = "Colour: Black";
+    }
+    
+    document.getElementById("UndoBtn").disabled = true;
+    
+    newGame();
+    
+    setTimeout(routineServerSync,200);
+    
+  }else{
+    //[Opponent 2] - VS computer
+    
+    //Set the main text in the titlebar to something relevant
+    document.getElementById("MainSubtitle").innerHTML = "Versus Computer (Unimplemented)";
+    
+    //Set the secondary text in the titlebar to the player's colo(u)r
+    if(playerColor == 0){
+      document.getElementById("ColourSubtitle").innerHTML = "Colour: White";
+    }else{
+      document.getElementById("ColourSubtitle").innerHTML = "Colour: Black";
+    }
+    
+    newGame();
   }
 }
 

@@ -1,0 +1,3 @@
+This directory contains the PHP files that were used before the overhaul to online multiplayer.
+This system was extremely bad, the user couldn't join a game which was already in-play, and the danger of errors was very high. It also wasn't a complete system, so it was scrapped on the 6th of August 2020.
+This is just stored here as a backup in case I ever want to reference the previous system.
