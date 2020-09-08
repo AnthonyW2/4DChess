@@ -12,7 +12,9 @@ body {
   background-color: #101010;
   color: #eeeeee;
   font-family: Georgia;
+  /*font-family: Times New Roman;*/
   margin: unset;
+  width: 100%;
 }
 
 /* Move an element up by one line relative to its parent */
@@ -30,49 +32,61 @@ body {
   background-color: #bbbbbb;
   color: #222222;
   font-family: Times New Roman;
-  font-size: 16px;
+  font-size: 1rem;
   text-align: center;
   text-decoration: none;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   margin: 4px 2px;
-  width: 190px;
-  height: 32px;
+  /*width: 190px;
+  height: 32px;*/
+  width: 12em;
+  height: 2em;
+}
+.MenuButton[disabled] {
+  background-color: #808080;
+  color: #404040;
+  cursor: not-allowed;
 }
 
 .MenuTextbox {
   background-color: #bbbbbb;
   color: #222222;
   font-family: Times New Roman;
-  font-size: 16px;
+  font-size: 1rem;
   text-align: center;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 3px;
   margin: 4px 2px;
-  width: 184px; /* 6px less than the button to account for the border width */
-  height: 24px;
+  
+  /* Slightly less than the button to account for the border width */
+  width: 11.7em;
+  height: 1.7em;
 }
 
 .MenuDropdown {
   background-color: #bbbbbb;
   color: #222222;
   font-family: Times New Roman;
-  font-size: 16px;
+  font-size: 1rem;
   text-align: center;
   text-decoration: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 3px;
   cursor: pointer;
   margin: 4px 2px;
-  width: 190px;
-  height: 30px;
+  /*width: 190px;
+  height: 30px;*/
+  width: 12em;
+  height: 2em;
 }
 
 /* Set the positions of the versus submenus */
 #VersusSubmenu2PL, #VersusSubmenu2PJ, #VersusSubmenu2PC, #VersusSubmenuCPU {
   position: absolute;
-  left: 250px;
+  /*left: 250px;*/
+  left: 14em;
   width: 80%;
 }
 
@@ -122,6 +136,8 @@ Z-Indexes for the game:
 
 99 - Turn color mask (JS)
 100 - Title bar
+
+999 - "Import game" pop-up
 */
 
 
@@ -134,21 +150,24 @@ Z-Indexes for the game:
   
   background-color: #181818;
   color: #eeeeee;
-  font-family: Times New Roman;
+  /*font-family: Times New Roman;*/
+  
   margin: 0px;
   border: none;
   padding: 0px;
   width: 100%;
-  height: 180px;
+  /*height: 180px;*/
+  height: 10rem;
 }
 
 #Game {
   position: absolute;
   z-index: 0;
-  top: 212px;
+  /*top: 212px;*/
+  top: 10rem;
   left: 0px;
   color: #eeeeee;
-  font-family: Times New Roman;
+  /*font-family: Times New Roman;*/
 }
 
 
@@ -289,6 +308,29 @@ Z-Indexes for the game:
   
   font-family: monospace;
   font-size: 12;
+}
+
+#TitleBarUnhideButton {
+  /*position: absolute;*/
+  position: fixed;
+  z-index: 100;
+  
+  background-color: #181818;
+  color: #d0d0d0;
+  
+  /*width: 28px;
+  height: 16px;*/
+  width: 32px;
+  height: 32px;
+  
+  font-family: Sans-Serif;
+  font-size: 24px;
+  text-align: center;
+  
+  left: 0rem;
+  top: 0rem;
+  
+  cursor: default;
 }
 
 

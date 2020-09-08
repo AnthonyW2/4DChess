@@ -1,11 +1,15 @@
 <!--
 Anthony Wilson
 
+Protected by the GNU General Public License V3
+
 24 July 2020
 24/7/20
 
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
-While the game concept is not completely ours, this entire site was written from the ground up, so the code is ours.
+While the game concept is not completely ours, this entire site was written from the ground up, so the code is entirely ours.
+
+See https://github.com/Anthony-Wilson-Programming/4DChess for the complete source code.
 -->
 
 <!DOCTYPE html>
@@ -37,7 +41,7 @@ While the game concept is not completely ours, this entire site was written from
   <body class="up1line">
     <h1>4 Dimensional Chess</h1>
     <p>This is an open-source game heavily inspired by <a href="https://store.steampowered.com/app/1349230/5D_Chess_With_Multiverse_Time_Travel/">5D Chess With Multiverse Time Travel</a><br>This is a <b>work in progress</b> (But we're getting super close to a functional system)</p>
-    <p>Check out the source code for this site <a href="https://github.com/Anthony-Wilson-Programming/4DChess">here</a></p>
+    <p>Check out the source code for this site at <a href="https://github.com/Anthony-Wilson-Programming/4DChess">github.com/Anthony-Wilson-Programming/4DChess</a></p>
     
     <!--This is a container for the main menu that will get hidden & replaced by another container when a button is pressed.-->
     <div id="MainMenu">
@@ -83,20 +87,27 @@ While the game concept is not completely ours, this entire site was written from
           <input class="MenuTextbox" type="text" id="JoinOnlineCode" maxlength="8" placeholder="abcd1234" value="">
           <br><br>
           <div>
+            <input type="radio" id="JoinOnlinePlayerSelectW" name="JoinOnlineColorSelector" checked>
+            <label for="PlayerSelectP1">White</label><br>
             <input type="radio" id="JoinOnlinePlayerSelectB" name="JoinOnlineColorSelector">
             <label for="PlayerSelectP2">Black</label><br>
-            <input type="radio" id="JoinOnlinePlayerSelectW" name="JoinOnlineColorSelector">
-            <label for="PlayerSelectP1">White</label><br>
-            <button class="MenuButton" id="JoinBtn" onclick="JoinOnlineGame()">Join Game</button>
           </div>
+          <br>
+          <form id="JoinOnlineForm" action="" method="post">
+            <label for="JoinOnlinePassword">Password (Only required if the host created one)</label><br>
+            <input class="MenuTextbox" type="text" id="JoinOnlinePassword" name="passw" maxlength="8" placeholder="Password (If required)" value="">
+          </form>
+          <br>
+          <button class="MenuButton" id="JoinBtn" onclick="JoinOnlineGame()">Join Game</button>
         </div>
           
         <!-- 2 Players Online - Create -->
         <div id="VersusSubmenu2PC" hidden>
           <h2>New Online 2 Player Game</h2>
           <h2 id="CreateOnlineStatus"></h2>
-          <label for="CreateOnlineCode">Game ID: (Minimum 8 characters)</label><br>
+          <label for="CreateOnlineCode">Game ID: (8 characters)</label><br>
           <input class="MenuTextbox" type="text" id="CreateOnlineCode" maxlength="8" placeholder="abcd1234" value="">
+          <button class="MenuButton" id="RandomiseGameIDButton" onclick="RandomiseGameID()">Randomise</button>
           <br><br>
           <label for="LayoutSelector">Choose starting layout:</label><br>
           <select class="MenuDropdown" name="LayoutSelector" id="CreateOnlineLayoutSelector">
@@ -107,12 +118,18 @@ While the game concept is not completely ours, this entire site was written from
           </select>
           <br><br>
           <div>
+            <input type="radio" id="CreateOnlinePlayerSelectW" name="CreateOnlineColorSelector" checked>
+            <label for="PlayerSelectP1">White</label><br>
             <input type="radio" id="CreateOnlinePlayerSelectB" name="CreateOnlineColorSelector">
             <label for="PlayerSelectP2">Black</label><br>
-            <input type="radio" id="CreateOnlinePlayerSelectW" name="CreateOnlineColorSelector">
-            <label for="PlayerSelectP1">White</label><br>
-            <button class="MenuButton" id="CreateBtn" onclick="CreateOnlineGame()">Create Game</button>
           </div>
+          <br>
+          <form id="CreateOnlineForm" action="" method="post">
+            <label for="CreateOnlinePassword">Password (Optional)</label><br>
+            <input class="MenuTextbox" type="text" id="CreateOnlinePassword" name="passw" maxlength="32" placeholder="Optional password" value="">
+          </form>
+          <br>
+          <button class="MenuButton" id="CreateBtn" onclick="CreateOnlineGame()">Create Game</button>
         </div>
         
         <!-- Versus Computer -->

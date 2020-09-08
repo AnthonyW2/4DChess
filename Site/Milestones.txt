@@ -8,3 +8,6 @@ JSON functionality fully implemented, along with "Import" and "Export" game opti
 
 [31/8/20]
 Re-arranged and compacted movement-visual code. Fixed some bugs. Compacted bishop & rook movement code.
+
+[8/9/20]
+Prepared for Release 1.0. Online multiplayer overhauled. Piece time-travel completed. Many code-optimisations made, making the program both faster and smaller. Also many other small changes made throughout the program, of which there are too many to keep track of.
