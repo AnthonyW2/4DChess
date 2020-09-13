@@ -19,8 +19,8 @@
   //  exit("1");
   //}
   
-  //$gamepath = "/tmp/4DChess/".$gameid;
-  $gamepath = "/srv/store/4DChess/".$gameid;
+  //$gamepath = "/tmp/4DChessV1.0/".$gameid;
+  $gamepath = "/srv/store/4DChessV1.0/".$gameid;
   if(!file_exists($gamepath)){
     exit("1");
   }

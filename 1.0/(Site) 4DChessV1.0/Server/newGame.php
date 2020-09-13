@@ -6,8 +6,8 @@
   date_default_timezone_set("Australia/Melbourne");
   
   
-  //$chessroot = "/tmp/4DChess";
-  $chessroot = "/srv/store/4DChess";
+  //$chessroot = "/tmp/4DChessV1.0";
+  $chessroot = "/srv/store/4DChessV1.0";
   //If the game path doesn't exist, create it (this should only need to be executed once per server reboot)
   if(!file_exists($chessroot)){
     mkdir($chessroot);

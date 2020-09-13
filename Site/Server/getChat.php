@@ -3,19 +3,20 @@
   //8/9/20
   
   $gameid = $_REQUEST["id"];
-  if(!isset($gameid) || $gameid == "" || strlen($gameid) != 8 || $gameid == "00000000"){
+  if(!isset($gameid) || $gameid == "" || strlen($gameid) != 8 || $gameid == "00000000" || !ctype_alnum($gameid)){
     //Game ID not supplied or invalid, error code 1
     exit("err_1");
   }
   
-  $gamepath = "/tmp/4DChess/".$gameid;
+  //$gamepath = "/tmp/4DChess/".$gameid;
+  $gamepath = "/srv/store/4DChess/".$gameid;
   if(!file_exists($gamepath)){
     //Game doesn't exist, error code 1
     exit("err_1");
   }
   
   $password = $_REQUEST["passw"];
-  if(!isset($password)){
+  if(!isset($password) || !ctype_alnum($password)){
     $password = "";
   }
   

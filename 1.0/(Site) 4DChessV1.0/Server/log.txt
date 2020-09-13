@@ -1,0 +1,100 @@
+--- 4D Chess server log ---
+
+[2020-08-21 10:01:07] Created the /tmp/4DChess/ directory
+[2020-08-21 10:01:07] Created a new game with ID: test0000
+[2020-08-21 10:03:35] Created a new game with ID: test0002
+[2020-08-21 11:04:07] Created a new game with ID: test0001
+[2020-08-21 11:27:51] Created a new game with ID: test0003
+[2020-08-22 08:40:49] Created the /tmp/4DChess/ directory
+[2020-08-22 08:40:49] Created a new game with ID: test0000
+[2020-08-22 12:46:44] Created a new game with ID: test0001
+[2020-08-22 15:27:47] Created a new game with ID: test0000
+[2020-08-22 15:30:09] Created a new game with ID: test0000
+[2020-08-24 11:15:57] Created the /tmp/4DChess/ directory
+[2020-08-24 11:15:57] Created a new game with ID: test0000
+[2020-08-24 11:23:24] Created the /tmp/4DChess/ directory
+[2020-08-24 11:23:24] Created a new game with ID: test0000
+[2020-08-24 12:36:30] Created a new game with ID: test0001
+[2020-08-27 08:56:57] Created the /tmp/4DChess/ directory
+[2020-08-27 08:56:57] Created a new game with ID: test0000
+[2020-09-01 14:57:01] Created the /tmp/4DChess/ directory
+[2020-09-01 14:57:01] Created a new game with ID: test0000
+[2020-09-02 08:52:01] Created the /tmp/4DChess/ directory
+[2020-09-02 08:52:01] Created a new game with ID: test0000
+[2020-09-02 08:52:31] Created a new game with ID: test0001
+[2020-09-02 08:57:25] Created a new game with ID: test0002
+[2020-09-02 08:59:37] Created a new game with ID: test0003
+[2020-09-02 09:00:48] Created a new game with ID: test0004
+[2020-09-02 09:01:37] Created a new game with ID: test0005
+[2020-09-02 09:02:15] Created a new game with ID: test0006
+[2020-09-02 09:02:56] Created a new game with ID: test0007
+[2020-09-02 09:09:37] Created a new game with ID: test0008
+[2020-09-02 09:22:44] Created a new game with ID: test0009
+[2020-09-02 09:24:26] Created a new game with ID: test0010
+[2020-09-02 09:25:36] Created a new game with ID: test0011
+[2020-09-02 11:09:23] Created a new game with ID: test0012
+[2020-09-02 11:09:50] Created a new game with ID: test0013
+[2020-09-02 11:11:29] Created a new game with ID: test0014
+[2020-09-02 11:11:45] Created a new game with ID: test0015
+[2020-09-02 11:13:35] Created a new game with ID: test0016
+[2020-09-03 16:19:38] Created the /tmp/4DChess/ directory
+[2020-09-03 16:19:47] Created a new game with ID: aaaaaaaa
+[2020-09-03 16:21:52] Created a new game with ID: bbbbbbbb
+[2020-09-04 11:22:26] Created the /tmp/4DChess/ directory
+[2020-09-04 11:22:26] Created a new game with ID: test0000
+[2020-09-04 11:22:55] Created a new game with ID: test0001
+[2020-09-05 14:57:30] Created the /tmp/4DChess/ directory
+[2020-09-05 16:32:22] Created a new game with ID: dSkeJEo9
+[2020-09-05 16:32:30] Created a new game with ID: QAy5FG7e
+[2020-09-05 16:32:38] Created a new game with ID: YN4LLJTw
+[2020-09-05 16:32:47] Created a new game with ID: ftYxRxRF
+[2020-09-05 16:32:55] Created a new game with ID: rrRCNySz
+[2020-09-05 16:33:01] Created a new game with ID: HCehrYtw
+[2020-09-05 16:33:10] Created a new game with ID: finWG7E2
+[2020-09-05 16:33:17] Created a new game with ID: 2SZFFwRJ
+[2020-09-05 16:52:49] Created a new game with ID: test0000
+[2020-09-05 16:53:02] Created a new game with ID: test0001
+[2020-09-05 18:33:28] Created a new game with ID: test0002
+[2020-09-05 21:23:06] Created a new game with ID: test0003
+[2020-09-06 08:30:06] Created the /tmp/4DChess/ directory
+[2020-09-06 08:30:06] Created a new game with ID: test0000
+[2020-09-06 17:19:18] Created the /tmp/4DChess/ directory
+[2020-09-06 17:19:18] Created a new game with ID: test0000
+[2020-09-06 21:09:10] Created a new game with ID: test0001
+[2020-09-06 21:28:09] Created a new game with ID: test0002
+[2020-09-06 22:10:01] Created a new game with ID: test0010
+[2020-09-07 08:13:33] Created the /tmp/4DChess/ directory
+[2020-09-07 08:13:33] Created a new game with ID: test0000
+[2020-09-07 08:14:33] Created a new game with ID: test0000
+[2020-09-07 16:43:19] Created the /tmp/4DChess/ directory
+[2020-09-07 16:43:19] Created a new game with ID: aaaaaaaa
+[2020-09-08 08:51:08] Created the /tmp/4DChess/ directory
+[2020-09-08 08:51:08] Created a new game with ID: test0000
+[2020-09-08 11:48:05] Created a new game with ID: test0001
+[2020-09-08 12:19:32] Created a new game with ID: test0002
+[2020-09-08 12:19:59] Created a new game with ID: dzkqehjo
+[2020-09-08 14:31:41] Created a new game with ID: test0003
+[2020-09-08 16:03:54] Created a new game with ID: testgame
+[2020-09-08 21:39:56] Created a new game with ID: test0001
+[2020-09-09 09:38:43] Created the / directory
+[2020-09-09 09:38:43] Created a new game with ID: test0000
+[2020-09-10 09:05:18] Created the / directory
+[2020-09-10 09:05:18] Created a new game with ID: test0000
+[2020-09-10 15:47:12] Created a new game with ID: test0001
+[2020-09-10 15:53:47] Created a new game with ID: test0002
+[2020-09-10 18:31:08] Created a new game with ID: testgame
+[2020-09-10 18:49:37] Created a new game with ID: testgame
+[2020-09-11 13:49:18] Created the / directory
+[2020-09-11 13:49:18] Created a new game with ID: test0000
+[2020-09-12 11:43:42] Created the / directory
+[2020-09-12 11:43:42] Created a new game with ID: test0000
+[2020-09-12 13:59:59] Created the / directory
+[2020-09-12 13:59:59] Created a new game with ID: testgame
+[2020-09-12 14:37:49] Created a new game with ID: testcal0
+[2020-09-13 12:46:09] Created the / directory
+[2020-09-13 12:46:09] Created a new game with ID: test0000
+[2020-09-13 12:59:34] Created the / directory
+[2020-09-13 12:59:34] Created a new game with ID: testgame
+[2020-09-13 13:13:46] Created the / directory
+[2020-09-13 13:13:46] Created a new game with ID: test0000
+[2020-09-13 13:14:35] Created a new game with ID: test0001

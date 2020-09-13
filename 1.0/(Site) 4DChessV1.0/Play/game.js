@@ -34,7 +34,7 @@
 // ~ 4  - Add "Undo" functionality (by cloning the field) and export/import game functionality
 // ~ 5  - Add time-travel moves for the rest of the pieces
 // ~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, make the games cheat-resistant, chat)
-// ~ 7  - First release (1.0.2.1-1)
+/// 7  - First release (1.0.2.1-1)
 // 8  - Add global & local game settings
 // 9  - Add computer player functionality
 // 10 - Create clients written in multiple languages (Java, C#, C++)
@@ -44,12 +44,7 @@
 "use strict";
 
 // (Maj Version).(Min Version).(Patch).(Build)-(Release)
-const version = "1.1.0.1-0";
-
-
-
-///var t0 = performance.now();
-///console.log(performance.now() - t0);
+const version = "1.0.2.1-1";
 
 
 

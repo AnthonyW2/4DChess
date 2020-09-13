@@ -2,8 +2,8 @@
   //2 September 2020
   //2/9/20
   
-  //$gamepath = "/tmp/4DChess";
-  $gamepath = "/srv/store/4DChess";
+  //$gamepath = "/tmp/4DChessV1.0";
+  $gamepath = "/srv/store/4DChessV1.0";
   
   $currentgames = glob($gamepath."/*");
   

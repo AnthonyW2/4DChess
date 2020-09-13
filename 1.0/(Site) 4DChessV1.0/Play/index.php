@@ -13,8 +13,8 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
 -->
 
 <?php
-  //$chessroot = "/tmp/4DChess";
-  $chessroot = "/srv/store/4DChess";
+  //$chessroot = "/tmp/4DChessV1.0";
+  $chessroot = "/srv/store/4DChessV1.0";
   
   $opponent = $_REQUEST["vs"];
   //$opponent can contain the value 0, 1 or 2

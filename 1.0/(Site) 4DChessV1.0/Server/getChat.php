@@ -1,6 +1,6 @@
 <?php
-  //5 September 2020
-  //5/9/20
+  //8 September 2020
+  //8/9/20
   
   $gameid = $_REQUEST["id"];
   if(!isset($gameid) || $gameid == "" || strlen($gameid) != 8 || $gameid == "00000000" || !ctype_alnum($gameid)){
@@ -8,8 +8,8 @@
     exit("err_1");
   }
   
-  //$gamepath = "/tmp/4DChess/".$gameid;
-  $gamepath = "/srv/store/4DChess/".$gameid;
+  //$gamepath = "/tmp/4DChessV1.0/".$gameid;
+  $gamepath = "/srv/store/4DChessV1.0/".$gameid;
   if(!file_exists($gamepath)){
     //Game doesn't exist, error code 1
     exit("err_1");
@@ -29,6 +29,6 @@
     }
   }
   
-  echo file_get_contents($gamepath."/gamestate.json");
+  echo file_get_contents($gamepath."/chat");
 ?>
 
