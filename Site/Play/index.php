@@ -7,9 +7,9 @@ Protected by the GNU General Public License V3
 24/7/20
 
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
-While the game concept is not completely ours, this entire site was written from the ground up, so the code is entirely ours.
+While the game concept is not completely mine, this entire site was written from the ground up, so the code is entirely owned by me.
 
-See https://github.com/Anthony-Wilson-Programming/4DChess for the complete source code.
+See https://github.com/AnthonyW2/4DChess for the complete source code.
 -->
 
 <?php
