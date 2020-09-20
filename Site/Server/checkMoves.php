@@ -15,25 +15,17 @@
     exit("err_1");
   }
   
-  ///$color = $_REQUEST["c"];
-  ///if(!isset($color) || $color == "" || $color > 1){
-  ///  //Color not set or invalid, error code 2
-  ///  exit("err_2");
-  ///}
-  
   $password = $_REQUEST["passw"];
   if(!isset($password) || !ctype_alnum($password)){
     $password = "";
   }
   
   //Check that the passord matches
-  if($opponent == 1){
-    if(file_exists($gamepath."/passw")){
-      $gamepassword = file_get_contents($gamepath."/passw");
-      if($password.PHP_EOL != $gamepassword){
-        //Password does not match, error code 2
-        exit("err_2");
-      }
+  if(file_exists($gamepath."/passw")){
+    $gamepassword = file_get_contents($gamepath."/passw");
+    if($password.PHP_EOL != $gamepassword){
+      //Password does not match, error code 2
+      exit("err_2");
     }
   }
   
@@ -42,14 +34,5 @@
   }else{
     exit("err_3");
   }
-  
-  ///$moves = glob($gamepath."/".$gameid."/moves/".$color."/*");
-  ///
-  ///foreach($moves As $move){
-  ///  //Echo out the file name (without the path)
-  ///  echo str_replace($gamepath."/".$gameid."/moves/".$color."/","",$move);
-  ///  //Remove the file
-  ///  unlink($move);
-  ///}
 ?>
 

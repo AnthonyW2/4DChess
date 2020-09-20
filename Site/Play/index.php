@@ -13,6 +13,9 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
 -->
 
 <?php
+  //Set the cache-control header for the dev version of the page
+  header("Cache-Control: no-cache");
+  
   //$chessroot = "/tmp/4DChess";
   $chessroot = "/srv/store/4DChess";
   
@@ -132,7 +135,7 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
       <button class="MenuButton up1line" id="ImportBtn" onclick="importGame()">Import Game</button>
       <button class="MenuButton up1line" id="UndoBtn" onclick="undoMove()">Undo Move</button>
       <button class="MenuButton up1line" id="ShareBtn" onclick="shareGame()" hidden>Share Game</button>
-      <button class="MenuButton up1line" id="CheckCheckBtn" onclick="checkForCheck()" hidden disabled>Check for Check</button>
+      <button class="MenuButton up1line" id="CheckCheckBtn" onclick="checkForCheck()">Check for Check</button>
       
       <!--div id="Debug" class="up1line">Release 1.0 scheduled for the 13th of September 2020</div-->
       

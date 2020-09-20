@@ -1,0 +1,23 @@
+Changelog for Anthony Wilson's 4 Dimensional Chess
+
+
+
+[13/9/20] (1.0.2.1-1) -  First release, including fully functional local multiplayer, online multiplayer, complete set of 5D Chess mechanics, importing/exporting game as JSON and much more. Roughly 3100 SLOC in total.
+
+[13/9/20] (1.1.0.1-0) - Some minor tweaks to the code after the first release.
+
+[13/9/20] (1.1.0.2-0) - Compacted the 4 2D loops that calculate most of the queen's time-travel moves into one 3 dimensional nested loop.
+
+[14/9/20] (1.1.0.3-0) - Changed the colour and opacity of the past movement visuals.
+
+[14/9/20] (1.1.0.4-0) - Tweaked some small parts of the code. Tested the delay between starting a web request and recieving an answer.
+
+[16/9/20] (1.1.0.5-0) - Fixed a problem in some Server/*.php files that caused the game password to be ignored.
+
+[16/9/20] (1.1.0.6-0) - Began work on NodeJS architecture to replace PHP requests.
+
+
+
+[] (1.1.0.#-0) - Began adding functionality to check for piece danger (check/mate)
+
+[] (1.1.#.#-1) - Added option to check if the player is in check. Added undo and move confirmation to online multiplayer. Added a NodeJS websocket option for online multiplayer, which will be used by default, with the fallback being PHP requests.

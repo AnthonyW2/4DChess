@@ -13,6 +13,7 @@
 
 
 /// TO DO:
+// Add autocheck / piece danger
 // Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness)
 // Use SVGs for the piece sprites
 // Make pawn promotion customisable
@@ -26,30 +27,49 @@
 // Add global and local game settings
 // For calculating check(mate) -> Calculate Queen+Knight moves from every king, then for every piece that lands on, calculate their possible moves. If any land on the king, flag it.
 // Use websockets for online multiplayer (hosted with NodeJS)
+// Add How to Play and Credits
 
 /// Roadmap:
 // ~ 1  - Fix current online multiplayer bugs
 // ~ 2  - Implement branching timelines (that will round out all of the "5D" functionality)
 // ~ 3  - Add "toJSON()" & "fromJSON" functions (for sending / storing the game)
-// ~ 4  - Add "Undo" functionality (by cloning the field) and export/import game functionality
+// ~ 4  - Add "Undo" functionality and export/import game functionality
 // ~ 5  - Add time-travel moves for the rest of the pieces
-// ~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, make the games cheat-resistant, chat)
+// ~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, add server-side protection against attacks)
 // ~ 7  - First release (1.0.2.1-1)
-// 8  - Add global & local game settings
-// 9  - Add computer player functionality
-// 10 - Create clients written in multiple languages (Java, C#, C++)
+/// 8  - Add a way to detect check or mate.
+// 9  - Switch from PHP requests to websockets. Add move confirmation to online multiplayer (and possibly undo functionality)
+// 10 - Add global & local game settings
+// 11 - Add computer player functionality
+// 12 - Create clients written in multiple languages (Java, C#, C++)
 
 
 
 "use strict";
 
 // (Maj Version).(Min Version).(Patch).(Build)-(Release)
-const version = "1.1.0.1-0";
+const version = "1.1.0.6-0";
 
 
 
 ///var t0 = performance.now();
 ///console.log(performance.now() - t0);
+
+
+
+// -- Networking variables and constants -- \\
+
+//The domain part of the URL
+const URLdomain = window.location.hostname;
+
+//The port that the web server is contacted on
+const URLport = window.location.port;
+
+//A variable which is used to make sure that 2 XML HTTP requests aren't sent at the same time
+var serverBusy = false;
+
+//The URL used to contact the NodeJS server (If you are hosting this yourself, be sure to change the port to match)
+const nodeJSURL = URLdomain+":"+"8002"+"/4DChess/";
 
 
 
@@ -71,9 +91,6 @@ var selectedPiece;
 
 //An array of all the elements that show where a piece can move (which also handle the click event which triggers a move)
 var movementVisuals = [];
-
-//A variable which is used to make sure 2 XML HTTP requests aren't sent at the same time
-var serverBusy = false;
 
 
 
@@ -1496,7 +1513,7 @@ function getAvailableMoves(piece){
       
       //This code is pretty much a combination of the bishop & rook movement code, see 'case 4' and 'case 6'
       
-      //Loop through the 4 cardinal directions, executing both the bishop and the rook code
+      //Loop through the 4 cardinal directions, executing both the bishop and the rook code (for local board moves)
       for(var dir = 0;dir < 4;dir += 1){
         //Bishop code
         
@@ -1565,78 +1582,36 @@ function getAvailableMoves(piece){
       
       //Time travel directions (x,y,b,t)
       var directs = [
-        //Same tile (X & Y) directions:
+        //Same tile (X & Y):
         
-        //Rook directions:
+        //Orthogonal:
         [0,0,0,-1],
         [0,0,0,1],
         [0,0,-1,0],
         [0,0,1,0],
         
-        //Bishop directions:
+        //Diagonal:
         [0,0,-1,-1],
         [0,0,1,-1],
         [0,0,-1,1],
         [0,0,1,1]
       ];
       
-      //Diagonal boards, Diagonal tiles
+      //Calculate the rest of the queen's time-travel moves (find the old code for this in "Alternate Code/Old Movement Code/")
       for(var a = 0;a < 4;a += 1){
         for(var b = 0;b < 4;b += 1){
-          //2 different ways of achieving the same thing (leaving both here for future reference)
-          
-          directs.push([
-            (a < 2 ? 0 : (1-(a%2)*2)),
-            (a < 2 ? (1-(a%2)*2) : 0),
-            (b < 2 ? 0 : (1-(b%2)*2)),
-            (b < 2 ? (1-(b%2)*2) : 0)
-          ]);
-          
-        }
-      }
-      //Orthogonal boards, Diagonal tiles
-      for(var a = 0;a < 4;a += 1){
-        for(var b = 0;b < 4;b += 1){
-          //2 different ways of achieving the same thing (leaving both here for future reference)
-          
-          directs.push([
-            (a%2 == 0 ? -1 : 1),
-            (a < 2 ? -1 : 1),
-            (b < 2 ? 0 : (1-(b%2)*2)),
-            (b < 2 ? (1-(b%2)*2) : 0)
-          ]);
-          
-        }
-      }
-      //Diagonal boards, Orthogonal tiles
-      for(var a = 0;a < 4;a += 1){
-        for(var b = 0;b < 4;b += 1){
-          //2 different ways of achieving the same thing (leaving both here for future reference)
-          
-          directs.push([
-            (a < 2 ? 0 : (1-(a%2)*2)),
-            (a < 2 ? (1-(a%2)*2) : 0),
-            (b%2 == 0 ? -1 : 1),
-            (b < 2 ? -1 : 1)
-          ]);
-          
-        }
-      }
-      //Diagonal boards, Diagonal tiles
-      for(var a = 0;a < 4;a += 1){
-        for(var b = 0;b < 4;b += 1){
-          //2 different ways of achieving the same thing (leaving both here for future reference)
-          
-          directs.push([
-            (a%2 == 0 ? -1 : 1),
-            (a < 2 ? -1 : 1),
-            (b%2 == 0 ? -1 : 1),
-            (b < 2 ? -1 : 1)
-          ]);
-          
+          for(var c = 0;c < 4;c += 1){
+            directs.push([
+              ( a%2 == 0 ? (b < 2 ? 0 : (1-(b%2)*2)) : (b%2 == 0 ? -1 : 1) ),
+              ( a%2 == 0 ? (b < 2 ? (1-(b%2)*2) : 0) : (b < 2 ? -1 : 1) ),
+              ( a < 2 ? (c < 2 ? 0 : (1-(c%2)*2)) : (c%2 == 0 ? -1 : 1) ),
+              ( a < 2 ? (c < 2 ? (1-(c%2)*2) : 0) : (c < 2 ? -1 : 1) )
+            ]);
+          }
         }
       }
       
+      //Loop through all the directions and start the checkMovesRecursively() function in each direction
       for(var a = 0;a < directs.length;a += 1){
         //Execute the function recursively in the same direction for the next board in line
         if(checkForBoard(directs[a][2]*2,directs[a][3],piece.parent)){
@@ -2078,6 +2053,124 @@ function checkForPieceDanger(piece){
   //If the check lands on a piece of the opposite color, check the moves of that piece
   //If it can capture the king, then the king is in check
   
+  //An array storing a reference to all pieces that could be threatening the piece
+  var piecesInRange = [];
+  /**
+  //Store all the spaces that a knight can move to in an array
+  var spaces = [
+    [-2,-1], //2 Left,  1 Up
+    [-2,1],  //2 Left,  1 Down
+    [-1,-2], //1 Left,  2 Up
+    [1,-2],  //1 Right, 2 Up
+    [2,-1],  //2 Right, 1 Up
+    [2,1],   //2 Right, 1 Down
+    [-1,2],  //1 Left,  2 Down
+    [1,2]    //1 Right, 2 Down
+  ];
+  
+  //Loop through the array of possible moves and check if each is available
+  for(var a = 0;a < spaces.length;a += 1){
+    if(px+spaces[a][0] >= 0 && py+spaces[a][1] >= 0 && px+spaces[a][0] < boardWidth && py+spaces[a][1] < boardHeight){
+      ///if(piece.parent.pieceTypeMap[ py+spaces[a][1] ][ px+spaces[a][0] ] == 0){
+      ///  addMoveVisual(a,px+spaces[a][0],py+spaces[a][1],false);
+      ///}else{
+      ///  if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+spaces[a][1] ][ px+spaces[a][0] ] ].color != piece.color){
+      ///    addCaptureVisual(a,piece,piece.parent.pieces[ piece.parent.pieceIDMap[ py+spaces[a][1] ][ px+spaces[a][0] ] ]);
+      ///  }else{
+      ///    addMoveVisual(a,px+spaces[a][0],py+spaces[a][1],true);
+      ///  }
+      ///}
+    }
+  }
+  
+  //Use a recursive function to calculate the time-travel moves of the knight
+  function checkKnightMoves(board,iteration,direction){
+    //Loop through the 4 cardinal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
+    for(var dir = 0;dir < 4;dir += 1){
+      //Check which iteration the function is up to
+      switch(iteration){
+        case 0:
+          //Calculate the coordinates of the movement visual
+          var _x = px+((dir < 2)?2-(dir%2)*4:0);
+          var _y = py+((dir < 2)?0:2-(dir%2)*4);
+          
+          //Check that the visual is within the bounds of the board
+          if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+            ///if(board.pieceTypeMap[_y][_x] == 0){
+            ///  addMoveVisual(movementVisuals.length,_x,_y,false,board);
+            ///}else{
+            ///  if(board.pieces[ board.pieceIDMap[_y][_x] ].color != piece.color){
+            ///    addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[_y][_x] ]);
+            ///  }else{
+            ///    addMoveVisual(movementVisuals.length,_x,_y,true,board);
+            ///  }
+            ///}
+          }
+          
+          //Execute the function for the next board in line
+          if(dir == direction){
+            //Check if the target board exists
+            if(checkForBoard((dir < 2)?2-(dir%2)*4:0,(dir < 2)?0:1-(dir%2)*2,board)){
+              var nextboard = board.parent.parent.timelines[ board.parent.id+((dir < 2)?0:1-(dir%2)*2) ].boards[ board.id+((dir < 2)?2-(dir%2)*4:0) ];
+              
+              checkKnightMoves(nextboard,iteration+1,dir);
+            }
+          }
+          
+          break;
+        case 1:
+          //Calculate the coordinates of the movement visual
+          var _x = px+((dir < 2)?1-(dir%2)*2:0);
+          var _y = py+((dir < 2)?0:1-(dir%2)*2);
+          
+          //Check that the visual is within the bounds of the board
+          if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+            ///if(board.pieceTypeMap[_y][_x] == 0){
+            ///  addMoveVisual(movementVisuals.length,_x,_y,false,board);
+            ///}else{
+            ///  if(board.pieces[ board.pieceIDMap[_y][_x] ].color != piece.color){
+            ///    addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[_y][_x] ]);
+            ///  }else{
+            ///    addMoveVisual(movementVisuals.length,_x,_y,true,board);
+            ///  }
+            ///}
+          }
+          break;
+        default:
+          console.warn("Warning: Reached an invalid amount of iterations while attempting to calcuate knight time-travel moves");
+      }
+    }
+  }
+  
+  //Loop through the 4 cardinal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
+  for(var dir = 0;dir < 4;dir += 1){
+    //Check that the target board exists
+    if(checkForBoard((dir < 2)?2-(dir%2)*4:0,(dir < 2)?0:1-(dir%2)*2)){
+      var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+((dir < 2)?0:1-(dir%2)*2) ].boards[ piece.parent.id+((dir < 2)?2-(dir%2)*4:0) ];
+      //Call the function for each direction
+      checkKnightMoves(board,0,dir);
+    }
+  }
+  
+  //Loop through the array of possible moves, but this time check the relative boards for available moves through time
+  for(var a = 0;a < spaces.length;a += 1){
+    //Check if the target board exists
+    if(checkForBoard(spaces[a][0]*2,spaces[a][1])){
+      var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+spaces[a][1] ].boards[ piece.parent.id+spaces[a][0]*2 ];
+      
+      //Detect which type of visual should be used (available move, blocked move, or capture)
+      ///if(board.pieceTypeMap[py][px] == 0){
+      ///  addMoveVisual(movementVisuals.length,px,py,false,board);
+      ///}else{
+      ///  if(board.pieces[ board.pieceIDMap[py][px] ].color != piece.color){
+      ///    addCaptureVisual(movementVisuals.length,piece,board.pieces[ board.pieceIDMap[py][px] ]);
+      ///  }else{
+      ///    addMoveVisual(movementVisuals.length,px,py,true,board);
+      ///  }
+      ///}
+    }
+  }
+  */
   return false;
 }
 
@@ -2188,6 +2281,9 @@ function throwError(err){
   //Get the recovery element from the DOM and make it visible
   var recoveryElement = document.getElementById("FatalErrorRecovery");
   recoveryElement.hidden = false;
+  
+  //Make the titlebar visible
+  document.getElementById("TitleBar").hidden = false;
   
   //Loop through all the previous moves of the game
   for(var a = 0;a < pastMoves.length;a += 1){
@@ -2370,11 +2466,23 @@ document.getElementById("ImportGameFileInput").addEventListener("change", import
 
 
 
-// -- Network stuff for communicating with the server (only used for online multiplayer) -- \\
+// -- Network code -- \\
+
+const socket = new WebSocket("ws://127.0.0.1:8082");
+
+socket.addEventListener("open",function(event){
+  socket.send("Test 1");
+});
+
+socket.addEventListener("message",function(event){
+  console.log("Message from server",event.data);
+});
 
 //Request the amounts of moves from the server-side game and sync to/from the server accordingly
 function requestMoves(){
   serverBusy = true;
+  
+  ///var requestTimeStart = performance.now();
   
   //Make an asynchronous request to the server which will return all of the specified player's moves (This will be changed in the future)
   var xmlhttp = new XMLHttpRequest();
@@ -2392,6 +2500,8 @@ function requestMoves(){
         //Throw an error if the "moves" file is missing from the server
         throwError("A server-side error occurred: \"moves\" file missing from game");
       }else{
+        ///console.log("Request time: "+(performance.now()-requestTimeStart)+"ms");
+        
         var serverMoveAmounts = JSON.parse(this.responseText);
         
         if(serverMoveAmounts[0] == -1){
@@ -2413,6 +2523,8 @@ function requestMoves(){
   
   if(password == "" || password == undefined){
     xmlhttp.open("GET","../Server/checkMoves.php?id="+gameID,true);
+    ///xmlhttp.open("GET","http://"+nodeJSURL+"checkMoves?id="+gameID,true);
+    console.log(nodeJSURL+"checkMoves?id="+gameID);
     xmlhttp.send();
   }else{
     xmlhttp.open("POST","../Server/checkMoves.php?id="+gameID,true);
@@ -2425,6 +2537,8 @@ function requestMoves(){
 function syncGameFromServer(){
   serverBusy = true;
   
+  ///var requestTimeStart = performance.now();
+  
   //Make an asynchronous request to the server which will return all of the specified player's moves (This will be changed in the future)
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function(){
@@ -2436,6 +2550,8 @@ function syncGameFromServer(){
         //Password detected as incorrect when requesting the amounts of moves
         throwError("Password detected as incorrect");
       }else{
+        ///console.log("Sync (down) time: "+(performance.now()-requestTimeStart)+"ms");
+        
         var serverObject;
         
         //Make sure the text string is long enough and is valid JSON data
@@ -2494,12 +2610,16 @@ function syncGameFromServer(){
 function syncGameToServer(){
   serverBusy = true;
   
+  ///var requestTimeStart = performance.now();
+  
   //Make an asynchronous request to the server which will return all of the specified player's moves (This will be changed in the future)
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function(){
     if(this.readyState == 4 && this.status == 200){
       
       if(parseInt(this.responseText) == 0){
+        ///console.log("Sync (up) time: "+(performance.now()-requestTimeStart)+"ms");
+        
         console.log("Successfully synced game to server");
       }else if(parseInt(this.responseText) == 1){
         //Tell the player that the game no longer exists on the server if this error is recieved

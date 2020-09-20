@@ -8,17 +8,6 @@
     exit("1");
   }
   
-  //$currentgames = glob($gamepath."/*");
-  //$gamexeists = False;
-  //foreach($currentgames as $game){
-  //  if($gamepath."/".$gameid == $game){
-  //    $gamexeists = True;
-  //  }
-  //}
-  //if(!$gamexeists){
-  //  exit("1");
-  //}
-  
   //$gamepath = "/tmp/4DChess/".$gameid;
   $gamepath = "/srv/store/4DChess/".$gameid;
   if(!file_exists($gamepath)){
