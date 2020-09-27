@@ -92,7 +92,7 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
     $layout = intval(file_get_contents($gamepath."/layout"));
   }
   
-  $urlpath = 'http://'.$_SERVER['HTTP_HOST'].'/4DChess/Play/';
+  $urlpath = 'http://'.$_SERVER['HTTP_HOST'].'/4DChessV1.0/Play/';
 ?>
 
 <!DOCTYPE html>
@@ -127,7 +127,7 @@ See https://github.com/Anthony-Wilson-Programming/4DChess for the complete sourc
       <h2 id="ColourSubtitle"></h2>
       
       <button class="MenuButton up1line" id="HideTitleBarBtn" onclick="toggleTitleBar()">Hide Title Bar</button>
-      <button class="MenuButton up1line" id="ResetBtn" onclick="resetGame()">[Debug] Reset Game</button>
+      <button class="MenuButton up1line" id="ResetBtn" onclick="resetGame()" hidden>[Debug] Reset Game</button>
       <button class="MenuButton up1line" id="ExportBtn" onclick="exportGame()">Export Game</button>
       <button class="MenuButton up1line" id="ImportBtn" onclick="importGame()">Import Game</button>
       <button class="MenuButton up1line" id="UndoBtn" onclick="undoMove()">Undo Move</button>

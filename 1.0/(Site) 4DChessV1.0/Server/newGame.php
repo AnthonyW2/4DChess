@@ -13,7 +13,7 @@
     mkdir($chessroot);
     chmod($chessroot, 0777);
     //Write to the log file
-    file_put_contents("log.txt","[".date("Y-m-d H:i:s",time())."] Created the ".$gamepath."/ directory".PHP_EOL,FILE_APPEND | LOCK_EX);
+    file_put_contents($chessroot."/log.txt","[".date("Y-m-d H:i:s",time())."] Created the ".$chessroot."/ directory".PHP_EOL,FILE_APPEND | LOCK_EX);
   }
   
   
@@ -97,7 +97,7 @@
   }
   
   //Write to the log file
-  file_put_contents("log.txt","[".date("Y-m-d H:i:s",time())."] Created a new game with ID: ".$gameid.PHP_EOL,FILE_APPEND | LOCK_EX);
+  file_put_contents($chessroot."/log.txt","[".date("Y-m-d H:i:s",time())."] Created a new game with ID: ".$gameid.PHP_EOL,FILE_APPEND | LOCK_EX);
   
   //Everything was successful, exit with code 0
   exit("0");
