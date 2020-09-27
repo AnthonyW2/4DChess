@@ -2,7 +2,52 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 
 
-[13/9/20] (1.0.2.1-1) -  First release, including fully functional local multiplayer, online multiplayer, complete set of 5D Chess mechanics, importing/exporting game as JSON and much more. Roughly 3100 SLOC in total.
+=== TO DO ===
+- Change rook time-travel calculation
+- Change the way movements are calculated (shuffle some functions around)
+
+- Create a page for making custom layouts / editing saves
+
+- Confirm Knight time-travel moves (they may be incorrect)
+- Add En Passant
+
+- Add global and local game settings
+- Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness)
+- Use SVGs for the piece sprites
+
+- Add function to detect piece danger and check (maybe mate too)
+- Make pawn promotion give a choice of pieces
+- Add "How to Play" and "Credits"
+
+- Add per-game chat for online multiplayer
+- Add move confirmation to online multiplayer
+- Fix online multiplayer POV (specifically for Black)
+- Add a "spectate"/"view only" mode for online multiplayer
+- Use websockets for online multiplayer (hosted with NodeJS)
+
+
+
+=== Roadmap ===
+~ 1  - Fix current online multiplayer bugs
+~ 2  - Implement branching timelines (that will round out all of the "5D" functionality)
+~ 3  - Add "toJSON()" & "fromJSON" functions (for sending / storing the game)
+~ 4  - Add "Undo" functionality and export/import game functionality
+~ 5  - Add time-travel moves for the rest of the pieces
+~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, add server-side protection against attacks)
+~ 7  - First release (1.0.2.1-1)
+ 8  > Add a way to detect check or mate.
+9  - Create option to use websockets. Add move confirmation to online multiplayer.
+10 - Add global & local game settings
+11 - Add computer player functionality
+12 - Create clients written in multiple languages (Java, C#, C++)
+
+
+
+=== Version History ===
+
+[24/7/20] (0.0.1.1-0) - Project started
+
+[13/9/20] (1.0.2.1-1) - First release, including fully functional local multiplayer, online multiplayer, complete set of 5D Chess mechanics, importing/exporting game as JSON and much more. Roughly 3100 SLOC in total.
 
 [13/9/20] (1.1.0.1-0) - Some minor tweaks to the code after the first release.
 
@@ -14,10 +59,12 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 [16/9/20] (1.1.0.5-0) - Fixed a problem in some Server/*.php files that caused the game password to be ignored.
 
-[16/9/20] (1.1.0.6-0) - Began work on NodeJS architecture to replace PHP requests.
+[23/9/20] (1.1.0.6-0) - Began work on NodeJS websocket architecture to replace PHP requests. Added option to undo when playing online multiplayer.
+
+[27/9/20] (1.1.0.7-0) - Changed the function that calculates a piece's moves - now storing them in an intermediate array before adding the elements using a seperate function. This makes far more sense for calculating piece danger.
+
+[27/9/20] (1.1.0.8-0) - Added function to check for piece danger (implemented function to check for check)
 
 
 
-[] (1.1.0.#-0) - Began adding functionality to check for piece danger (check/mate)
-
-[] (1.1.#.#-1) - Added option to check if the player is in check. Added undo and move confirmation to online multiplayer. Added a NodeJS websocket option for online multiplayer, which will be used by default, with the fallback being PHP requests.
+[] (1.1.#.#-1) - Added a NodeJS websocket option for online multiplayer, which will be used by default, with the fallback being PHP requests.

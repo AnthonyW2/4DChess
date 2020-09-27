@@ -9,7 +9,7 @@ Protected by the GNU General Public License V3
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
 While the game concept is not completely mine, this entire site was written from the ground up, so the code is entirely owned by me.
 
-See https://github.com/AnthonyW2/4DChess for the complete source code.
+See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.js is where the real magic happens)
 -->
 
 <?php
@@ -118,7 +118,7 @@ See https://github.com/AnthonyW2/4DChess for the complete source code.
     <meta property="og:title" content="<?php echo $og_title; ?>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?php echo $urlpath; ?>">
-    <meta property="og:image" content="<?php echo $urlpath; ?>PreviewImg.png">
+    <meta property="og:image" content="/4DChess/Play/PreviewImg.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="256">
     <meta property="og:image:height" content="256">
@@ -136,6 +136,7 @@ See https://github.com/AnthonyW2/4DChess for the complete source code.
       <button class="MenuButton up1line" id="UndoBtn" onclick="undoMove()">Undo Move</button>
       <button class="MenuButton up1line" id="ShareBtn" onclick="shareGame()" hidden>Share Game</button>
       <button class="MenuButton up1line" id="CheckCheckBtn" onclick="checkForCheck()">Check for Check</button>
+      <button class="MenuButton up1line" id="CheckMateBtn" onclick="checkForMate()">Check for Mate</button>
       
       <!--div id="Debug" class="up1line">Release 1.0 scheduled for the 13th of September 2020</div-->
       
