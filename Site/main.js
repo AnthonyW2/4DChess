@@ -1,4 +1,4 @@
-//Anthony Wilson - 4DChess
+//Anthony Wilson - 4D Chess
 
 //24 July 2020
 //24/7/20

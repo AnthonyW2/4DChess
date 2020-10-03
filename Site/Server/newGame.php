@@ -34,7 +34,7 @@
   
   $layout = $_REQUEST["l"];
   //Set to the default layout if an invalid layout is specified
-  if(!isset($layout) || $layout == "" || !($layout >= 0 && $layout <= 3)){
+  if(!isset($layout) || $layout == "" || !($layout >= 0 && $layout <= 4)){
     $layout = 0;
   }
   

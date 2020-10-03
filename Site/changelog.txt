@@ -3,21 +3,23 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 
 === TO DO ===
-- Change rook time-travel calculation
-- Change the way movements are calculated (shuffle some functions around)
+- Add "The present"
+- Add active and inactive timelines
 
-- Create a page for making custom layouts / editing saves
+- Change castling move-detection to use a function which takes in 4 params (king starting-pos, rook starting-pos, king post-pos, rook post-pos) and adds a visual if the move is valid.
 
 - Confirm Knight time-travel moves (they may be incorrect)
 - Add En Passant
 
-- Add global and local game settings
 - Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness)
 - Use SVGs for the piece sprites
 
-- Add function to detect piece danger and check (maybe mate too)
 - Make pawn promotion give a choice of pieces
+
+- Create a page for making custom layouts / editing saves
+- Add global and local game settings
 - Add "How to Play" and "Credits"
+- Add chess clock (options in global settings)
 
 - Add per-game chat for online multiplayer
 - Add move confirmation to online multiplayer
@@ -35,8 +37,8 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 ~ 5  - Add time-travel moves for the rest of the pieces
 ~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, add server-side protection against attacks)
 ~ 7  - First release (1.0.2.1-1)
- 8  > Add a way to detect check or mate.
-9  - Create option to use websockets. Add move confirmation to online multiplayer.
+~ 8  - Add a way to detect check or mate.
+ 9  > Create option to use websockets. Add move confirmation to online multiplayer.
 10 - Add global & local game settings
 11 - Add computer player functionality
 12 - Create clients written in multiple languages (Java, C#, C++)
@@ -57,13 +59,25 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 [14/9/20] (1.1.0.4-0) - Tweaked some small parts of the code. Tested the delay between starting a web request and recieving an answer.
 
-[16/9/20] (1.1.0.5-0) - Fixed a problem in some Server/*.php files that caused the game password to be ignored.
+[16/9/20] (1.1.0.5-0) - Fixed a problem in some PHP files that caused the game password to be ignored.
 
 [23/9/20] (1.1.0.6-0) - Began work on NodeJS websocket architecture to replace PHP requests. Added option to undo when playing online multiplayer.
 
 [27/9/20] (1.1.0.7-0) - Changed the function that calculates a piece's moves - now storing them in an intermediate array before adding the elements using a seperate function. This makes far more sense for calculating piece danger.
 
-[27/9/20] (1.1.0.8-0) - Added function to check for piece danger (implemented function to check for check)
+[27/9/20] (1.1.0.8-0) - Added function to check for piece danger (implemented function to check if a king is in check).
+
+[28/9/20] (1.1.0.9-0) - Changed the "unhide title bar" symbol to a classic hamburger menu symbol (3 horizontal lines).
+
+[30/9/20] (1.1.0.10-0) - Changed the addMoveVisuals() function (made the code neater than it was, but it's still horrible). Added checkmate detection, which appears to work most of the time. It'll need a lot more tweaking to become 100% reliable though.
+
+[30/9/20] (1.1.0.11-0) - Fixed "Undo" in online multiplayer. Tweaked checkmate detection, now more efficient and more reliable if both players are in check.
+
+[2/10/20] (1.1.0.12-0) - Changed the way layouts are applied when creating a new game. Instead of generating them in code, pull the entire JSON file from the server, and load the game from that.
+
+[3/10/20] (1.1.0.13-0) - Past-movement-visual arrays in simplified objects are no longer references, and are now stand-alone arrays.
+
+[3/10/20] (1.1.0.14-0) - Layouts are now in a smaller JSON format, meaning less text to pull from the server. Added the 8x8 turn 0 starting layout. Changed castling move-detection to use normal if clauses instead of switch/case, so that the same code can support multiple layouts.
 
 
 

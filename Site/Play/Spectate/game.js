@@ -1,26 +1,11 @@
-//Code created by Anthony Wilson
-
-//Protected by the GNU General Public License V3
-
-// Project Started:
-//24 July 2020
-//24/7/20
-
-// Release 1.0:
-//13 September 2020
-//13/9/20
+//Anthony Wilson - 4D Chess
 
 
 
 "use strict";
 
 // (Maj Version).(Min Version).(Patch).(Build)-(Release)
-const version = "1.1.0.14-0";
-
-
-
-///var t0 = performance.now();
-///console.log(performance.now() - t0);
+const version = "1.1.0.11-0";
 
 
 
@@ -40,7 +25,7 @@ const nodeJSURL = URLdomain+":"+"8002"+"/4DChess/";
 
 
 
-// -- Global variable declaration -- //
+// -- Global variable declaration -- \\
 
 //Reference to the DOM element that contains all the other game elements
 var gameContainer = document.getElementById("Game");
@@ -61,7 +46,7 @@ var movementVisuals = [];
 
 
 
-// -- Game constants -- //
+// -- Game constants -- \\
 
 //The width of the coloured border around a chess board
 const boardOffset = 6; //px
@@ -108,12 +93,80 @@ const pieceIconPaths = [
   ]
 ];
 
-var boardWidth = 8;
-var boardHeight = 8;
+//Starting board layouts
+const startingLayouts = [
+  [ //0 - Standard 8x8 chess board layout
+    [6,5,4,3,2,4,5,6],
+    [7,7,7,7,7,7,7,7],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [7,7,7,7,7,7,7,7],
+    [6,5,4,3,2,4,5,6]
+  ],
+  [ //1 - 1st 4x4 starting layout
+    [5,3,2,6],
+    [7,7,7,7],
+    [7,7,7,7],
+    [5,3,2,6]
+  ],
+  [ //2 - 2nd 4x4 starting layout
+    [2,3,6,4],
+    [7,7,7,7],
+    [7,7,7,7],
+    [2,3,6,4]
+  ],
+  [ //3 - 1st 5x5 starting layout
+    [2,3,4,5,6],
+    [7,7,7,7,7],
+    [0,0,0,0,0],
+    [7,7,7,7,7],
+    [2,3,4,5,6]
+  ]
+];
+
+//Layouts of the piece colors (corresponds to "startingLayouts"), 0 = White, 1 = Black
+const colorLayouts = [
+  [ //0 - Standard 8x8 chess board color layout
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0]
+  ],
+  [ //1 - 1st 4x4 color layout
+    [1,1,1,1],
+    [1,1,1,1],
+    [0,0,0,0],
+    [0,0,0,0]
+  ],
+  [ //2 - 2nd 4x4 color layout
+    [1,1,1,1],
+    [1,1,1,1],
+    [0,0,0,0],
+    [0,0,0,0]
+  ],
+  [ //3 - 1st 5x5 color layout
+    [1,1,1,1,1],
+    [1,1,1,1,1],
+    [0,0,0,0,0],
+    [0,0,0,0,0],
+    [0,0,0,0,0]
+  ]
+];
+
+///const startingTimelines = 1;
+
+const boardWidth = startingLayouts[chosenLayout][0].length;
+const boardHeight = startingLayouts[chosenLayout].length;
 
 
 
-// -- Classes for common game objects -- //
+// -- Classes for common game objects -- \\
 
 //The main "Field" that contains all the other objects (boards, timelines, etc)
 class Field{
@@ -149,6 +202,12 @@ class Field{
   
   //Safely clone the current object and all child objects
   clone(cloneid,render = true){
+    ///if(fields[cloneid] != undefined){
+    ///  console.warn("Warning: Overwriting an existing field");
+    ///  fields[cloneid].container.remove();
+    ///  fields[cloneid] = undefined;
+    ///}
+    
     var clonedField = new Field(cloneid,render);
     for(var a = 0;a < this.timelines.length;a += 1){
       if(this.timelines[a] != undefined){
@@ -184,7 +243,7 @@ class Field{
     
     return this.timelines[tid];
   }
-  
+  /**
   //Remove a timeline from the field (only used for changing the ID of a timeline)
   removeTimeline(tid){
     if(this.hasVisuals){
@@ -201,6 +260,7 @@ class Field{
       }
     }
   }
+  * */
   
   //Get a board from given coordinates
   getBoard(bid,tid){
@@ -247,12 +307,6 @@ class Field{
     }
   }
   
-  //Increment this.moveAmounts[0] by 1 and do the same for the corresponding color
-  incrementMoveAmounts(color){
-    this.moveAmounts[0] += 1;
-    this.moveAmounts[1+color] += 1;
-  }
-  
   //Add a 32x32px square indicationg a previous move
   addPastMoveVisual(tid,bid,x,y){
     this.movementVisuals[this.movementVisuals.length] = [tid,bid,x,y];
@@ -265,6 +319,12 @@ class Field{
       this.pastMoveContainer.appendChild(visual);
     }
   }
+  
+  //Increment this.moveAmounts[0] by 1 and do the same for the corresponding color
+  ///incrementMoveAmounts(color){
+  ///  this.moveAmounts[0] += 1;
+  ///  this.moveAmounts[1+color] += 1;
+  ///}
   
   //Refresh all the visuals by removing and re-adding the HTML elements
   refreshMovementVisuals(){
@@ -288,12 +348,12 @@ class Field{
   simplify(){
     //Declare the simplified version of the field object
     var simplifiedObj = {
-      //Using the Array.slice() function here stores a new version of the array instead of a reference to the original (the JSON encode/decode does the same thing for a 2D array)
+      //Using the Array.slice() function here stores a new version of the array instead of a reference to the original
       version: version,
       moveAmounts: this.moveAmounts.slice(),
       boardWidth: boardWidth,
       boardHeight: boardHeight,
-      movementVisuals: JSON.parse(JSON.stringify(this.movementVisuals)),
+      movementVisuals: this.movementVisuals.slice(),
       timelines: []
     };
     
@@ -307,30 +367,8 @@ class Field{
   
   //Re-initialise the current object (and all child objects) from a simplified version of itself (returns true on success)
   fromSimpleObject(obj){
-    if(obj == undefined){
-      throwError("Supplied simple object is undefined");
-    }
-    //Check if the version of the object matches the client version
-    if(obj.version != version && obj.version != "-"){
-      
-      var objVer = obj.version.split("-")[0].split(".");
-      var cliVer = version.split("-")[0].split(".");
-      
-      if(objVer[0] != cliVer[0]){
-        alert("The recieved game data (from version "+obj.version+") is not compatible with 4D Chess v"+version);
-        return;
-      }else if(parseInt(objVer[1]) == 0){
-        alert("The recieved game data is from 4D Chess v1.0 and is not compatible with version 1.1");
-        return;
-      }else if(parseInt(objVer[1]) > 1){
-        alert("The recieved game data from 4D Chess v"+obj.version+" is from a future version, and may not be compatible");
-        return;
-      }else if(parseInt(objVer[2]) > parseInt(cliVer[2])){
-        alert("The recieved game data from 4D Chess v"+obj.version+" is from a future patch, and may not be compatible");
-        return;
-      }else{
-        console.warn("Version number of simple object does not match client, this may cause errors");
-      }
+    if(obj.version != version){
+      console.warn("Version number of simple object does not match client");
     }
     
     if(this.hasVisuals){
@@ -351,9 +389,6 @@ class Field{
       this.pastMoveContainer = document.createElement("div");
       this.container.appendChild(this.pastMoveContainer);
     }
-    
-    boardWidth = obj.boardWidth;
-    boardHeight = obj.boardHeight;
     
     //Restore the total amount of moves made
     this.moveAmounts = obj.moveAmounts.slice();
@@ -380,7 +415,7 @@ class Field{
             
             //Set the selectable attribute and the starting layout of the newly added board
             newBoard.setSelectable(obj.timelines[t].boards[b].selectable);
-            newBoard.setBlankLayout();
+            newBoard.setStartingLayout(-1);
             
             //Loop through the pieces of the simplified board object
             for(var p = 0;p < obj.timelines[t].boards[b].pieces.length;p += 1){
@@ -610,14 +645,14 @@ class Board{
     
     var newBoard = newparenttimeline.addBoard(cloneid);
     newBoard.setSelectable(this.selectable);
-    newBoard.setBlankLayout();
+    newBoard.setStartingLayout(-1);
     for(var a = 0;a < this.pieces.length;a += 1){
       if(this.pieces[a] != undefined){
         this.pieces[a].clone(newBoard,a);
       }
     }
   }
-  
+  /**
   //Duplicate the current board and extend the current timeline (or create a new one if needed) - triggered whenever a piece moves
   extendTimeline(){
     //Make the current (now old) instance of the board no longer selectable
@@ -684,7 +719,7 @@ class Board{
     //Return undefined if (for some reason) nothing gets returned above
     return undefined;
   }
-  
+  */
   //Loop through all the child pieces and set all of their selectable attributes to true or false
   setSelectable(s){
     this.selectable = s;
@@ -728,19 +763,53 @@ class Board{
     }
     this.pieces[pid] = undefined;
   }
-  
-  //Set the arrays to a default state, creating a blank board
-  setBlankLayout(){
-    for(var a = 0;a < boardHeight;a += 1){
-      this.pieceTypeMap[a] = [];
-      this.pieceIDMap[a] = [];
-      for(var b = 0;b < boardWidth;b += 1){
-        this.pieceTypeMap[a][b] = 0;
-        this.pieceIDMap[a][b] = -1;
+  /**
+  //Set the board to a default starting layout
+  setStartingLayout(blank = false){
+    if(blank){
+      for(var a = 0;a < boardHeight;a += 1){
+        this.pieceTypeMap[a] = [];
+        this.pieceIDMap[a] = [];
+        for(var b = 0;b < boardWidth;b += 1){
+          this.pieceTypeMap[a][b] = 0;
+          this.pieceIDMap[a][b] = -1;
+        }
+      }
+    }else{
+      //The Y coords need to be flipped for online multiplayer
+      if(opponent == 1){
+        //Loop through the grid of the board and add the pieces according to the starting layout
+        for(var a = 0;a < boardHeight;a += 1){
+          this.pieceTypeMap[a] = [];
+          this.pieceIDMap[a] = [];
+          for(var b = 0;b < boardWidth;b += 1){
+            this.pieceTypeMap[a][b] = 0;
+            this.pieceIDMap[a][b] = -1;
+            if(startingLayouts[chosenLayout][a][b] > 0){
+              //Add each piece to the board, using the pieceLayouts[] and colorLayouts[] arrays to specify the type & color
+              this.addPiece(this.pieces.length,startingLayouts[chosenLayout][a][b],colorLayouts[chosenLayout][a][b],b,a);
+            }
+          }
+        }
+      }else{
+        //Loop through the grid of the board and add the pieces according to the starting layout
+        for(var a = 0;a < boardHeight;a += 1){
+          this.pieceTypeMap[a] = [];
+          this.pieceIDMap[a] = [];
+          for(var b = 0;b < boardWidth;b += 1){
+            this.pieceTypeMap[a][b] = 0;
+            this.pieceIDMap[a][b] = -1;
+            if(startingLayouts[chosenLayout][a][b] > 0){
+              //Add each piece to the board, using the pieceLayouts[] and colorLayouts[] arrays to specify the type & color
+              this.addPiece(this.pieces.length,startingLayouts[chosenLayout][a][b],(colorLayouts[chosenLayout][a][b]+playerColor)%2,b,a);
+              //When playing a local game, the color of the pieces depends on the playerColor variable
+            }
+          }
+        }
       }
     }
   }
-  
+  */
   //Add visuals to the board's container (DOM element)
   render(){
     if(this.hasVisuals){
@@ -829,7 +898,7 @@ class Piece{
       this.parent.container.appendChild(this.container);
     }
     
-    this.setSelectable(this.parent.selectable);
+    ///this.setSelectable(this.parent.selectable);
     
     this.render();
   }
@@ -847,24 +916,24 @@ class Piece{
     newPiece.direction = this.direction;
   }
   
-  setSelectable(s){
-    if(this.hasVisuals){
-      if(s){
-        //Check if the piece should be made selectable, depending on the piece color, the player color and the opponent
-        if(this.color === this.parent.turnColor && (this.color === playerColor && opponent != 0 || opponent == 0)){
-          var self = this;
-          this.container.onclick = function(){
-            selectPiece(self);
-          };
-          //All this does is change the cursor if it hovers over the piece
-          this.container.classList.add("SelectablePiece");
-        }
-      }else{
-        this.container.onclick = function(){};
-        this.container.classList.remove("SelectablePiece");
-      }
-    }
-  }
+  ///setSelectable(s){
+  ///  if(this.hasVisuals){
+  ///    if(s){
+  ///      //Check if the piece should be made selectable, depending on the piece color, the player color and the opponent
+  ///      if(this.color === this.parent.turnColor && (this.color === playerColor && opponent != 0 || opponent == 0)){
+  ///        var self = this;
+  ///        this.container.onclick = function(){
+  ///          selectPiece(self);
+  ///        };
+  ///        //All this does is change the cursor if it hovers over the piece
+  ///        this.container.classList.add("SelectablePiece");
+  ///      }
+  ///    }else{
+  ///      this.container.onclick = function(){};
+  ///      this.container.classList.remove("SelectablePiece");
+  ///    }
+  ///  }
+  ///}
   
   changeID(newid){
     this.id = newid;
@@ -893,19 +962,19 @@ class Piece{
     }
   }
   
-  select(){
-    this.selected = true;
-    if(this.hasVisuals){
-      this.container.style.backgroundColor = "#30c030";
-    }
-  }
-  
-  deselect(){
-    this.selected = false;
-    if(this.hasVisuals){
-      this.container.style.backgroundColor = "";
-    }
-  }
+  ///select(){
+  ///  this.selected = true;
+  ///  if(this.hasVisuals){
+  ///    this.container.style.backgroundColor = "#30c030";
+  ///  }
+  ///}
+  ///
+  ///deselect(){
+  ///  this.selected = false;
+  ///  if(this.hasVisuals){
+  ///    this.container.style.backgroundColor = "";
+  ///  }
+  ///}
   
   getX(){
     return this.x;
@@ -949,8 +1018,9 @@ class Piece{
 
 
 
-// -- Functions for the game (These are global to save object memory) -- //
+// -- Functions for the game (These are global to save object memory) -- \\
 
+/**
 //Deselect the previous piece and select the new piece
 function selectPiece(piece){
   if(selectedPiece != undefined){
@@ -1202,7 +1272,8 @@ function addMoveVisuals(piece,moves){
     }
   }
 }
-
+*/
+/**
 //Calculate all possible locations that any given piece can move to
 function getAvailableMoves(piece,typeOverride = undefined){
   //Get the type from the piece, or use the supplied one
@@ -1355,80 +1426,91 @@ function getAvailableMoves(piece,typeOverride = undefined){
       
       //Castling
       if(piece.moveAmount == 0){
-        if(chosenLayout == 0 || chosenLayout == 4){
-          //Default (8x8) board
-          
-          //Check if the left rook is available to perform a castle
-          if(piece.parent.pieceTypeMap[py][px-4] == 6){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px-4] ].moveAmount == 0){
-              //Check if the space in between is available
-              if(piece.parent.pieceTypeMap[py][px-1] == 0 && piece.parent.pieceTypeMap[py][px-2] == 0 && piece.parent.pieceTypeMap[py][px-3] == 0){
-                //Store the parent timeline and the ID of the new board outside of the function
-                var parentTimeline = piece.parent.parent;
-                var newBoardId = parentTimeline.boards.length;
-                
-                //Add a movement visual with an extra custom function
-                addMoveVisual(piece.parent,px-3,py,1,undefined,function(){
-                  console.log("Castled");
+        switch(chosenLayout){
+          case 0:
+            //Default (8x8) board
+            
+            //Check if the left rook is available to perform a castle
+            if(piece.parent.pieceTypeMap[py][px-4] == 6){
+              if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px-4] ].moveAmount == 0){
+                //Check if the space in between is available
+                if(piece.parent.pieceTypeMap[py][px-1] == 0 && piece.parent.pieceTypeMap[py][px-2] == 0 && piece.parent.pieceTypeMap[py][px-3] == 0){
+                  //Store the parent timeline and the ID of the new board outside of the function
+                  var parentTimeline = piece.parent.parent;
+                  var newBoardId = parentTimeline.boards.length;
                   
-                  //Store the new board and the targetted rook objects
-                  var newBoard = parentTimeline.boards[newBoardId];
-                  var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px-4] ];
-                  
-                  //Update the piece maps
-                  newBoard.pieceTypeMap[py][px-4] = 0;
-                  newBoard.pieceIDMap[py][px-4] = -1;
-                  newBoard.pieceTypeMap[py][px-1] = targetRook.type;
-                  newBoard.pieceIDMap[py][px-1] = targetRook.id;
-                  
-                  //Move the rook to its new position
-                  targetRook.setX(px-1);
-                  
-                  //Increment the amount of moves the rook has made
-                  targetRook.moveAmount += 1;
-                });
-              }else{
-                addMoveVisual(piece.parent,px-3,py,0);
+                  //Add a movement visual with an extra custom function
+                  addMoveVisual(piece.parent,px-3,py,1,undefined,function(){
+                    console.log("Castled");
+                    
+                    //Store the new board and the targetted rook objects
+                    var newBoard = parentTimeline.boards[newBoardId];
+                    var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px-4] ];
+                    
+                    //Update the piece maps
+                    newBoard.pieceTypeMap[py][px-4] = 0;
+                    newBoard.pieceIDMap[py][px-4] = -1;
+                    newBoard.pieceTypeMap[py][px-1] = targetRook.type;
+                    newBoard.pieceIDMap[py][px-1] = targetRook.id;
+                    
+                    //Move the rook to its new position
+                    targetRook.setX(px-1);
+                    
+                    //Increment the amount of moves the rook has made
+                    targetRook.moveAmount += 1;
+                  });
+                }else{
+                  addMoveVisual(piece.parent,px-3,py,0);
+                }
               }
             }
-          }
-          
-          //Check if the right rook is available to perform a castle
-          if(piece.parent.pieceTypeMap[py][px+3] == 6){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px+3] ].moveAmount == 0){
-              //Check if the space in between is available
-              if(piece.parent.pieceTypeMap[py][px+1] == 0 && piece.parent.pieceTypeMap[py][px+2] == 0){
-                //Store the parent timeline and the ID of the new board outside of the function
-                var parentTimeline = piece.parent.parent;
-                var newBoardId = parentTimeline.boards.length;
-                
-                //Add a movement visual with an extra custom function
-                addMoveVisual(piece.parent,px+2,py,1,undefined,function(){
-                  console.log("Castled");
+            
+            //Check if the right rook is available to perform a castle
+            if(piece.parent.pieceTypeMap[py][px+3] == 6){
+              if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px+3] ].moveAmount == 0){
+                //Check if the space in between is available
+                if(piece.parent.pieceTypeMap[py][px+1] == 0 && piece.parent.pieceTypeMap[py][px+2] == 0){
+                  //Store the parent timeline and the ID of the new board outside of the function
+                  var parentTimeline = piece.parent.parent;
+                  var newBoardId = parentTimeline.boards.length;
                   
-                  //Store the new board and the targetted rook objects
-                  var newBoard = parentTimeline.boards[newBoardId];
-                  var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px+3] ];
-                  
-                  //Update the piece maps
-                  newBoard.pieceTypeMap[py][px+3] = 0;
-                  newBoard.pieceIDMap[py][px+3] = -1;
-                  newBoard.pieceTypeMap[py][px+1] = targetRook.type;
-                  newBoard.pieceIDMap[py][px+1] = targetRook.id;
-                  
-                  //Move the rook to its new position
-                  targetRook.setX(px+1);
-                  
-                  //Increment the amount of moves the rook has made
-                  targetRook.moveAmount += 1;
-                });
-              }else{
-                addMoveVisual(piece.parent,px+2,py,0);
+                  //Add a movement visual with an extra custom function
+                  addMoveVisual(piece.parent,px+2,py,1,undefined,function(){
+                    console.log("Castled");
+                    
+                    //Store the new board and the targetted rook objects
+                    var newBoard = parentTimeline.boards[newBoardId];
+                    var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px+3] ];
+                    
+                    //Update the piece maps
+                    newBoard.pieceTypeMap[py][px+3] = 0;
+                    newBoard.pieceIDMap[py][px+3] = -1;
+                    newBoard.pieceTypeMap[py][px+1] = targetRook.type;
+                    newBoard.pieceIDMap[py][px+1] = targetRook.id;
+                    
+                    //Move the rook to its new position
+                    targetRook.setX(px+1);
+                    
+                    //Increment the amount of moves the rook has made
+                    targetRook.moveAmount += 1;
+                  });
+                }else{
+                  addMoveVisual(piece.parent,px+2,py,0);
+                }
               }
             }
-          }
-        }else{
-          console.warn("Warning: Invalid layout to check for castling");
+            break;
+          case 1:
+            ///Yet to implement
+            break;
+          case 2:
+            ///Yet to implement
+            break;
+          case 3:
+            ///Yet to implement
+            break;
+          default:
+            console.warn("Warning: Invalid layout to check for castling");
         }
       }
       
@@ -1899,10 +1981,13 @@ function getAvailableMoves(piece,typeOverride = undefined){
   
   return movementVisualCoords;
 }
+*/
 
 
-// -- Check for piece danger and check/mate -- //
 
+// -- Check for piece danger and check/mate -- \\
+
+/**
 //Check if a piece is in danger of being captured
 function checkForPieceDanger(piece,imediateThreat = true){
   //An array storing a reference to all pieces that could be threatening the piece
@@ -1973,7 +2058,7 @@ function checkForMate(){
   
   var t0 = performance.now();
   
-  function checkIfStillCheck(field,color){
+  function checkIfStillCheck(field){
     for(var t = 0;t < field.timelines.length;t += 1){
       for(var b = 0;b < field.timelines[t].boards.length;b += 1){
         var board = field.timelines[t].boards[b];
@@ -1981,7 +2066,7 @@ function checkForMate(){
           for(var p = 0;p < board.pieces.length;p += 1){
             var piece = board.pieces[p];
             //Check that the piece exists and is a king
-            if(piece != undefined && piece.type == 2 && piece.color == color){
+            if(piece != undefined && piece.type == 2){
               
               //Use the "checkForPieceDanger" on each king (Allow detection of next-turn threats so that the player can check before they make a move)
               var threateningPieces = checkForPieceDanger(piece,false);
@@ -2122,7 +2207,7 @@ function checkForMate(){
                   }
                   
                   //Check if the king is still in check
-                  if(!checkIfStillCheck(testField,king.color)){
+                  if(!checkIfStillCheck(testField)){
                     console.log("King is not mated");
                     console.log(testPiece);
                     console.log(move);
@@ -2173,70 +2258,49 @@ function checkForMate(){
   document.getElementById("CheckMateBtn").innerHTML = "Check for Mate";
 }
 
+*/
 
-
-// -- Meta -- //
+// -- Meta -- \\
 
 //Create a new game with given paramaters (yet to be fully implemented)
-function newGame(layout = 0){
-  gameContainer.innerHTML = "";
-  
-  //Make an asynchronous request to the server, confirming that a game with the current game ID exists
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.onreadystatechange = function(){
-    if(this.readyState == 4 && this.status == 200){
-      //Create a new Field with ID 0
-      fields[0] = new Field(0);
-      
-      fields[0].fromSimpleObject(JSON.parse(this.responseText));
-      
-      if(opponent == 1){
-        //Perform any syncing to/from the server that is required
-        setTimeout(routineServerSync,200);
-      }
-    }
-    if(this.status == 404){
-      throwError("Supplied layout was not found on the server");
-    }
-  };
-  xmlhttp.open("GET","Layouts/"+layout+".json",true);
-  xmlhttp.send();
-  
-  ///// Create a new Field with ID 0
-  ///fields[0] = new Field(0);
-  ///
-  ///// Create a new timeline with ID 0
-  ///var startingTimeline = fields[0].addTimeline(0);
-  ///
-  ///var startingBoard = startingTimeline.addBoard(0);
-  ///startingBoard.setSelectable(true);
-  ///startingBoard.setStartingLayout();
-  ///
-  ///fields[0].render();
-}
+///function newGame(){
+///  gameContainer.innerHTML = "";
+///  
+///  // Create a new Field with ID 0
+///  fields[0] = new Field(0);
+///  
+///  // Create a new timeline with ID 0
+///  var startingTimeline = fields[0].addTimeline(0);
+///  
+///  var startingBoard = startingTimeline.addBoard(0);
+///  startingBoard.setSelectable(true);
+///  startingBoard.setStartingLayout();
+///  
+///  fields[0].render();
+///}
 
 //Delete the old game and create a new one [DEBUG]
-function resetGame(){
-  globalDeselect();
-  
-  fields[0].container.remove();
-  fields[0] = undefined;
-  newGame();
-  
-  pastMoves = [];
-  
-  console.log("- - - - - - - -\nReset Game\n- - - - - - - -");
-}
-
+///function resetGame(){
+///  globalDeselect();
+///  
+///  fields[0].container.remove();
+///  fields[0] = undefined;
+///  newGame();
+///  
+///  pastMoves = [];
+///  
+///  console.log("- - - - - - - -\nReset Game\n- - - - - - - -");
+///}
+/**
 //Store a simplified version of the previous game state (for undo functionality)
 function storePastMove(){
-  //Add the simplified version of the current (soon to be previous) game state (which is just field 0)
-  pastMoves[fields[0].moveAmounts[opponent == 0 ? 0 : (playerColor+1)]] = fields[0].simplify();
-  
   //If the amount of stored game states exceeds the limit, remove the one [limit] moves old
   if(pastMoves.length >= pastMoveLimit){
-    pastMoves[fields[0].moveAmounts[opponent == 0 ? 0 : (playerColor+1)]-pastMoveLimit] = undefined;
+    pastMoves[fields[0].moveAmounts[0]-pastMoveLimit] = undefined;
   }
+  
+  //Add the simplified version of the current (soon to be previous) game state (which is just field 0)
+  pastMoves[fields[0].moveAmounts[0]] = fields[0].simplify();
 }
 
 //Revert the game to a previous game state
@@ -2248,32 +2312,38 @@ function undoMove(){
     }
   }
   
-  var prevMove = fields[0].moveAmounts[opponent == 0 ? 0 : (playerColor+1)]-1;
+  var prevMove = (opponent == 0 ? fields[0].moveAmounts[0]-1 : fields[0].moveAmounts[playerColor+1]-1);
   
-  if(prevMove < 0){
+  if(fields[0].moveAmounts[0] == 0){
     console.log("Cannot undo move");
-    alert("Previous move unavailable");
     return;
   }
+  ///if(pastMoves.length != fields[0].moveAmounts[0]){
+  ///  console.warn("Warning: Amount of previous moves stored doesn't match current total moves");
+  ///}
   
-  var pastMoveObj = pastMoves[prevMove];
-  
-  if(pastMoveObj == undefined){
+  if(pastMoves[prevMove] == undefined){
     console.warn("Warning: Previous move not available");
     alert("Previous move unavailable");
     return;
   }
   
+  ///Store the current field before removing it for adding redo functionality
+  
   fields[0].container.remove();
   fields[0] = new Field(0);
-  fields[0].fromSimpleObject(pastMoveObj);
+  fields[0].fromSimpleObject(pastMoves[prevMove]);
+  
+  ///I may add this back in, though I'm pretty sure it's not needed
+  //pastMoves[prevMove] = undefined;
+  //pastMoves.pop();
   
   //Send the game to the server
   if(opponent == 1){
     syncGameToServer();
   }
 }
-
+*/
 //Pretty self-explanatory, make a specified player win the game
 function win(player){
   var playerText = ["White","Black"];
@@ -2289,46 +2359,6 @@ function throwError(err){
   
   //Make the titlebar visible
   document.getElementById("TitleBar").hidden = false;
-  
-  //Loop through all the previous moves of the game
-  for(var a = 0;a < pastMoves.length;a += 1){
-    if(pastMoves[a] != undefined){
-      //Create a button to export the desired game state
-      var recoveryButton = document.createElement("button");
-      recoveryButton.innerHTML = "Move "+a;
-      
-      //Assign the value of the button as the ID of the game state
-      recoveryButton.value = a;
-      
-      //Add the function to export the game state as the click event for the button
-      recoveryButton.addEventListener("click",function(event){
-        //Get the ID of the game state from the name target element (recoveryButton)
-        var gamestate = parseInt(event.currentTarget.value);
-        
-        var simplified = pastMoves[gamestate];
-        
-        //Store the the JSON text in a URI encoded 
-        var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified,null,2));
-        
-        //Get the download anchor element
-        var downloadAnchor = document.createElement("a");
-        downloadAnchor.hidden = true;
-        recoveryElement.appendChild(downloadAnchor);
-        
-        //Set the necessary attributes of the download anchor element so that it will initialise a download when clicked
-        downloadAnchor.href = dataString;
-        downloadAnchor.download = "4D Chess Game State (Move "+gamestate+").json";
-        
-        //Artificially "click" the download anchor element
-        downloadAnchor.click();
-        
-        console.log("Exported a previous game state (move "+gamestate+") as JSON");
-      });
-      
-      recoveryElement.appendChild(recoveryButton);
-      recoveryElement.appendChild(document.createElement("br"));
-    }
-  }
   
   document.getElementById("MainSubtitle").innerHTML = err;
   document.getElementById("MainSubtitle").style.color = "#ff0000";
@@ -2351,28 +2381,28 @@ function toggleTitleBar(){
 }
 
 //Create a link for someone to join the game
-function shareGame(){
-  var joinLink = window.location.href.replace("c="+playerColor,"c="+((playerColor+1)%2));
-  var specLink = "[Unimplemented]";
-  
-  if(password == ""){
-    alert("Join as opponent ("+(playerColor == 0 ? "White" : "Black")+") - "+joinLink+"\nSpectate game - "+specLink);
-  }else{
-    alert("This game is password protected and must be joined through the main menu");
-  }
-}
+///function shareGame(){
+///  var joinLink = window.location.href.replace("c="+playerColor,"c="+((playerColor+1)%2));
+///  var specLink = "[Unimplemented]";
+///  
+///  if(password == ""){
+///    alert("Join as opponent ("+(playerColor == 0 ? "White" : "Black")+") - "+joinLink+"\nSpectate game - "+specLink);
+///  }else{
+///    alert("This game is password protected and must be joined through the main menu");
+///  }
+///}
 
 
 
-// -- Export/Import Game -- //
+// -- Export/Import Game -- \\
 
+/**
 //Export the current game as JSON
 function exportGame(){
   var simplified = fields[0].simplify();
   
   //Store the the JSON text in a URI encoded 
   var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified,null,2));
-  ///var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified)); //Compressed format (no newlines, no extra spaces)
   
   //Get the download anchor element
   var downloadAnchor = document.getElementById("DownloadAnchor");
@@ -2412,6 +2442,12 @@ function importGame(){
       return;
     }
     
+    if(importedObject.boardWidth != boardWidth || importedObject.boardHeight != boardHeight){
+      console.warn("Board width/height of imported game does not match that of the current game");
+      alert("Board width/height of imported game does not match that of the current game\nCurrent game: "+boardWidth+"x"+boardHeight+"\nImported game: "+importedObject.boardWidth+"x"+importedObject.boardHeight);
+      return;
+    }
+    
     //Remove the contents of the current game
     fields[0].container.remove();
     //Create a new filed
@@ -2419,7 +2455,9 @@ function importGame(){
     //Recreate the new field from the imported JSON data
     fields[0].fromSimpleObject(importedObject);
     
-    pastMoves = [];
+    for(var a = 0;a < fields[0].moveAmounts[0];a += 1){
+      pastMoves[a] = undefined;
+    }
     
     //Hide the "Import Game" popup
     uploadWindow.hidden = true;
@@ -2462,9 +2500,9 @@ function cancelImport(){
 //Attach a "change" event listener to the file upload element to execute the importFromFile() function when a file is attached
 document.getElementById("ImportGameFileInput").addEventListener("change", importFromFile);
 
+*/
 
-
-// -- Network code -- //
+// -- Network code -- \\
 
 ///const socket = new WebSocket("ws://127.0.0.1:8002");
 var socketOpen = false;
@@ -2513,13 +2551,16 @@ function requestMoves(){
         var serverMoveAmounts = JSON.parse(this.responseText);
         
         if(serverMoveAmounts[0] == -1){
-          console.log("Performing first server-sync of the game");
-          syncGameToServer();
+          ///console.log("Performing first server-sync of the game");
+          ///syncGameToServer();
         }else{
-          if(fields[0].moveAmounts[0] < serverMoveAmounts[0] || fields[0].moveAmounts[((playerColor+1)%2)+1] != serverMoveAmounts[((playerColor+1)%2)+1]){
+          if(fields[0].moveAmounts[0] < serverMoveAmounts[0] || fields[0].moveAmounts[((playerColor+1)%2)+1] < serverMoveAmounts[((playerColor+1)%2)+1]){
+            //Store the current game state as the previous move
+            storePastMove();
+            
             syncGameFromServer();
           }else if(fields[0].moveAmounts[0] > serverMoveAmounts[0] || fields[0].moveAmounts[playerColor+1] > serverMoveAmounts[playerColor+1]){
-            syncGameToServer();
+            ///syncGameToServer();
           }
         }
       }
@@ -2529,6 +2570,7 @@ function requestMoves(){
   if(password == "" || password == undefined){
     xmlhttp.open("GET","../Server/checkMoves.php?id="+gameID,true);
     ///xmlhttp.open("GET","http://"+nodeJSURL+"checkMoves?id="+gameID,true);
+    console.log(nodeJSURL+"checkMoves?id="+gameID);
     xmlhttp.send();
   }else{
     xmlhttp.open("POST","../Server/checkMoves.php?id="+gameID,true);
@@ -2591,6 +2633,10 @@ function syncGameFromServer(){
         //Recreate the new field from the imported JSON data
         fields[0].fromSimpleObject(serverObject);
         
+        ///for(var a = 0;a < fields[0].moveAmounts[0];a += 1){
+        ///  pastMoves[a] = undefined;
+        ///}
+        
         console.log("Successfully synced game from server");
       }
       serverBusy = false;
@@ -2606,6 +2652,8 @@ function syncGameFromServer(){
   }
 }
 
+
+/**
 //Send the client's game data to the server
 function syncGameToServer(){
   serverBusy = true;
@@ -2654,7 +2702,7 @@ function syncGameToServer(){
     xmlhttp.send("passw="+password+"&gamedata="+JSONString);
   }
 }
-
+*/
 //Pull down the chat messages from the server
 function syncChat(){
   
@@ -2681,70 +2729,53 @@ function routineServerSync(){
 
 
 
-// -- Executed on page load -- //
+// -- Executed on page load -- \\
 
 //Called by the "onload()" function of a the body element, which calls the functions to start a game
 function startJS(){
-  if(opponent == 0){
-    //[Opponent 0] - Local multiplayer
-    
-    document.getElementById("MainSubtitle").innerHTML = "Local Multiplayer";
-    document.getElementById("ColourSubtitle").innerHTML = "";
-    
-    newGame(chosenLayout);
-    
-  }else if(opponent == 1){
-    //[Opponent 1] - Online multiplayer
-    
-    //Make sure the game ID is valid
-    if(gameID == "00000000"){
-      throwError("Invalid game ID");
-    }
-    
-    //Make an asynchronous request to the server, confirming that a game with the current game ID exists
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function(){
-      if(this.readyState == 4 && this.status == 200){
-        //Error code 1 
-        if(this.responseText == 1){
-          throwError("Invalid game ID");
-        }
-      }
-    };
-    xmlhttp.open("GET","../Server/confirmGameExists.php?id="+gameID,true);
-    xmlhttp.send();
-    
-    //Set the main text in the titlebar to something relevant
-    document.getElementById("MainSubtitle").innerHTML = "Online Multiplayer - Game ID: "+gameID;
-    
-    document.getElementById("ShareBtn").hidden = false;
-    
-    newGame(chosenLayout);
-    
-    ///setTimeout(routineServerSync,200);
-    
-  }else{
-    //[Opponent 2] - VS computer
-    
-    //Set the main text in the titlebar to something relevant
-    document.getElementById("MainSubtitle").innerHTML = "Versus Computer (Unimplemented)";
-    
-    //Set the secondary text in the titlebar to the player's colo(u)r
-    if(playerColor == 0){
-      document.getElementById("ColourSubtitle").innerHTML = "Colour: White";
-    }else{
-      document.getElementById("ColourSubtitle").innerHTML = "Colour: Black";
-    }
-    
-    newGame(chosenLayout);
+  //Online multiplayer code (Spectate only)
+  
+  //Make sure the game ID is valid
+  if(gameID == "00000000"){
+    throwError("Invalid game ID");
   }
+  //Make an asynchronous request to the server, confirming that a game with the current game ID exists
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function(){
+    if(this.readyState == 4 && this.status == 200){
+      //Error code 1 
+      if(this.responseText == 1){
+        throwError("Invalid game ID");
+      }
+    }
+  };
+  xmlhttp.open("GET","../Server/confirmGameExists.php?id="+gameID,true);
+  xmlhttp.send();
+  
+  //Set the main text in the titlebar to something relevant
+  document.getElementById("MainSubtitle").innerHTML = "Spectate game - Game ID: "+gameID;
+  
+  ///newGame();
+  
+  setTimeout(routineServerSync,200);
 }
 
 
 
+/**
+var frameCount = 0;
+var doLoop = false; /// Disabled until required
+//var frameRate = 30;
+//var MSPT = 1000/frameRate;
 
-
-
-
-
-
+function draw(){
+  ///Currently disabled until required
+  
+  if(doLoop){
+    frameCount += 1;
+    //setTimeout(draw,Math.ceil(MSPT));
+    window.requestAnimationFrame(draw);
+  }
+}
+// The "draw()" function will be called by the "onload" event triggered by the body element
+*/

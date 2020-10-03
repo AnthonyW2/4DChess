@@ -23,7 +23,6 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
   //$opponent can contain the value 0, 1 or 2
   if(!isset($opponent) || $opponent == "" || !($opponent >= 0 && $opponent <= 2)){
     $opponent = 0;
-    header("Location: ../");
   }
   
   $gameid = $_REQUEST["id"];
@@ -47,8 +46,8 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
   }
   
   $layout = $_REQUEST["l"];
-  //$layout can contain the values 0 - 4
-  if(!isset($layout) || $layout == "" || !($layout >= 0 && $layout <= 4)){
+  //$layout can contain the values 0 - 3
+  if(!isset($layout) || $layout == "" || !($layout >= 0 && $layout <= 3)){
     $layout = 0;
   }
   
