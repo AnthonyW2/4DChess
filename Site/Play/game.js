@@ -6,16 +6,20 @@
 //24 July 2020
 //24/7/20
 
-// Release 1.0:
+// 1.0 Release:
 //13 September 2020
 //13/9/20
+
+// 1.1 Release:
+//- October 2020
+//-/10/20
 
 
 
 "use strict";
 
 // (Maj Version).(Min Version).(Patch).(Build)-(Release)
-const version = "1.1.0.14-0";
+const version = "1.1.0.19-0";
 
 
 
@@ -38,6 +42,12 @@ var serverBusy = false;
 //The URL used to contact the NodeJS server (If you are hosting this yourself, be sure to change the port to match)
 const nodeJSURL = URLdomain+":"+"8002"+"/4DChess/";
 
+//The variable which will point to the WebSocket object used for online multiplayer
+var socket;
+
+//A variable to keep track of the state of the WebSocket
+var socketOpen = false;
+
 
 
 // -- Global variable declaration -- //
@@ -58,6 +68,14 @@ var selectedPiece;
 
 //An array of all the elements that show where a piece can move (which also handle the click event which triggers a move)
 var movementVisuals = [];
+
+//How many more active timelines a player can have than their opponent
+var activeTimelineLimit = 1;
+
+//Whether or not to use "The Present" mechanics
+var thePresent = true;
+//The position of "The Present"
+var presentPosition = 0;
 
 
 
@@ -126,6 +144,7 @@ class Field{
     
     this.fullid = "F"+this.id;
     
+    this.presentPosition = 0;
     this.movementVisuals = [];
     
     //Store the total amount of moves, as well as the amount of moves for each player
@@ -144,6 +163,11 @@ class Field{
       
       this.pastMoveContainer = document.createElement("div");
       this.container.appendChild(this.pastMoveContainer);
+      
+      this.presentLine = document.createElement("div");
+      this.presentLine.classList.add("PresentLine");
+      this.presentLine.style.width = (boardWidth/2)*32+"px";
+      this.container.appendChild(this.presentLine);
     }
   }
   
@@ -155,7 +179,7 @@ class Field{
         this.timelines[a].clone(clonedField,a,render);
       }
     }
-    if(this.hasVisuals){
+    if(render){
       clonedField.render();
     }
     return clonedField;
@@ -178,11 +202,50 @@ class Field{
     this.timelines[tid] = new Timeline(this,tid,this.hasVisuals);
     
     if(this.hasVisuals){
-      this.timelines[tid].container.style.top = tid*(boardHeight+1)*32+16-boardOffset+"px";
-      this.timelines[tid].container.style.left = 16-boardOffset+"px";
+      this.timelines[tid].container.style.top = ((tid+1)*(boardHeight+1)*32+16-boardOffset)+"px";
+      this.timelines[tid].container.style.left = (16-boardOffset)+"px";
     }
     
     return this.timelines[tid];
+  }
+  
+  //Shift all timelines down in the list (add 1 to their IDs)
+  shiftTimelinesDown(){
+    //Loop through all timeline, bottom to top
+    for(var t = this.timelines.length-1;t >= 0;t -= 1){
+      this.timelines[t].id = t+1;
+      this.timelines[t].fullid = "F"+this.timelines[t].fid+"-T"+(t+1);
+      this.timelines[t].container.id = this.timelines[t].fullid;
+      this.timelines[t].container.style.top = ((t+2)*(boardHeight+1)*32+16-boardOffset)+"px";
+      
+      for(var b = 0;b < this.timelines[t].boards.length;b += 1){
+        var board = this.timelines[t].boards[b];
+        if(board != undefined){
+          board.tid = t+1;
+          board.fullid = "F"+board.fid+"-T"+(t+1)+"-B"+board.id;
+          board.container.id = board.fullid;
+          for(var p = 0;p < board.pieces.length;p += 1){
+            if(board.pieces[p] != undefined){
+              board.pieces[p].tid = t+1;
+              board.pieces[p].fullid = "F"+board.pieces[p].fid+"-T"+(t+1)+"-B"+board.pieces[p].bid+"-P"+board.pieces[p].id;
+              board.pieces[p].container.id = board.pieces[p].fullid;
+            }
+          }
+        }
+      }
+      
+      this.timelines[t+1] = this.timelines[t];
+    }
+    this.timelines[0] = undefined;
+    
+    //Shift all movement visuals down by one timeline
+    var mv = this.movementVisuals;
+    for(var a = 0;a < mv.length;a += 1){
+      mv[a][0] += 1;
+    }
+    this.refreshMovementVisuals();
+    
+    console.log(this.timelines);
   }
   
   //Remove a timeline from the field (only used for changing the ID of a timeline)
@@ -194,10 +257,65 @@ class Field{
   }
   
   //Search for and return the main (starting) timeline
-  getMainTimeline(){
+  getStartingTimelines(){
+    var startingTimelines = [];
     for(var a = 0;a < this.timelines.length;a += 1){
       if(this.timelines[a].boards[0] != undefined){
-        return this.timelines[a];
+        startingTimelines.push(this.timelines[a]);
+      }
+    }
+    return startingTimelines;
+  }
+  
+  //Get all timelines made by a player
+  getPlayerMadeTimelines(color){
+    var timelines = [];
+    
+    ///if((opponent < 2 && color == 0) || (opponent == 2 && (color+playerColor)%2 == 1)){
+    ///  
+    ///}
+    
+    var startingTimelines = this.getStartingTimelines();
+    
+    if(color == 1){
+      //Loop through all timelines before the first starting timeline
+      for(var a = 0;a < startingTimelines[0].id;a += 1){
+        timelines.push(this.timelines[a]);
+      }
+    }else{
+      //Loop through all timelines after the last starting timeline
+      for(var a = startingTimelines[startingTimelines.length-1].id+1;a < fields[0].timelines.length;a += 1){
+        timelines.push(this.timelines[a]);
+      }
+    }
+    
+    return timelines;
+  }
+  
+  //Set timelines to active or inactive, depending on the amount of them created by each player
+  refreshActiveTimelines(){
+    var whiteTimelines = this.getPlayerMadeTimelines(0);
+    var blackTimelines = this.getPlayerMadeTimelines(1);
+    
+    var activeLimit = 0;
+    if(whiteTimelines.length > blackTimelines.length){
+      activeLimit = blackTimelines.length+activeTimelineLimit;
+    }else{
+      activeLimit = whiteTimelines.length+activeTimelineLimit;
+    }
+    
+    for(var a = 0;a < whiteTimelines.length;a += 1){
+      if(a < activeLimit){
+        whiteTimelines[a].setActive(true);
+      }else{
+        whiteTimelines[a].setActive(false);
+      }
+    }
+    for(var a = 0;a < blackTimelines.length;a += 1){
+      if(a >= blackTimelines.length-activeLimit){
+        blackTimelines[a].setActive(true);
+      }else{
+        blackTimelines[a].setActive(false);
       }
     }
   }
@@ -218,6 +336,43 @@ class Field{
     return undefined;
   }
   
+  //Update the position of "The Present"
+  updatePresentPosition(){
+    ///var t0 = performance.now();
+    
+    //Make sure all timelines are correctly active/inactive
+    fields[0].refreshActiveTimelines();
+    
+    //Variable to store one of the timelines the present is based
+    var presentTimeline = fields[0].timelines[0];
+    
+    var newPresentPos = presentTimeline.boards.length-1;
+    
+    //Loop through all active timelines
+    for(var t = 0;t < fields[0].timelines.length;t += 1){
+      if(fields[0].timelines[t].active){
+        //If the length of the timeline is smaller than the present position, move the present back to there
+        if(fields[0].timelines[t].boards.length-1 < newPresentPos){
+          presentTimeline = fields[0].timelines[t];
+          newPresentPos = presentTimeline.boards.length-1;
+        }
+      }
+    }
+    
+    this.presentPosition = newPresentPos;
+    
+    ///console.log(newPresentPos);
+    
+    //Move the present visualisation element
+    if(this.hasVisuals){
+      this.presentLine.style.left = ((this.presentPosition*(boardWidth+1)+(boardWidth/4+0.5))*32-4)+"px";
+      this.presentLine.style.height = ((this.timelines.length+1)*(boardHeight+1)*32+(boardHeight+1)*32-8)+"px";
+      this.presentLine.style.backgroundColor = (presentTimeline.boards[this.presentPosition].turnColor == 0 ? "#c0c0c0" : "#101010");
+    }
+    
+    ///console.log(performance.now() - t0+"ms");
+  }
+  
   //Render the field grid
   render(){
     if(this.hasVisuals){
@@ -231,15 +386,15 @@ class Field{
       }
       
       //Add the grid tiles to the background
-      for(var a = 0;a < Math.ceil(fieldwidth/2);a += 1){
-        for(var b = 0;b < this.timelines.length;b += 1){
+      for(var a = 0;a < Math.ceil(fieldwidth/2+1);a += 1){
+        for(var b = 0;b < this.timelines.length+2;b += 1){
           var gridSquare = document.createElement("div");
           gridSquare.innerHTML = "";
           gridSquare.classList.add("FieldTile");
           gridSquare.style.backgroundColor = ((a+b)%2 == 0)?("#282828"):("#202020");
-          gridSquare.style.left = (boardWidth+1)*32*2*a+"px";
+          gridSquare.style.left = (boardWidth+1)*64*a+"px";
           gridSquare.style.top = (boardWidth+1)*32*b+"px";
-          gridSquare.style.width = ((boardWidth+1)*32)*2+"px";
+          gridSquare.style.width = (boardWidth+1)*64+"px";
           gridSquare.style.height = (boardWidth+1)*32+"px";
           this.gridContainer.appendChild(gridSquare);
         }
@@ -261,7 +416,7 @@ class Field{
       visual.innerHTML = "";
       visual.classList.add("PastMoveVisual");
       visual.style.left = (boardWidth+1)*32*bid+x*32+16+"px";
-      visual.style.top = (boardHeight+1)*32*tid+y*32+16+"px";
+      visual.style.top = (boardHeight+1)*32*(tid+1)+y*32+16+"px";
       this.pastMoveContainer.appendChild(visual);
     }
   }
@@ -278,7 +433,7 @@ class Field{
         visual.innerHTML = "";
         visual.classList.add("PastMoveVisual");
         visual.style.left = (boardWidth+1)*32*this.movementVisuals[a][1]+this.movementVisuals[a][2]*32+16+"px";
-        visual.style.top = (boardHeight+1)*32*this.movementVisuals[a][0]+this.movementVisuals[a][3]*32+16+"px";
+        visual.style.top = (boardHeight+1)*32*(this.movementVisuals[a][0]+1)+this.movementVisuals[a][3]*32+16+"px";
         this.pastMoveContainer.appendChild(visual);
       }
     }
@@ -350,6 +505,12 @@ class Field{
       //Recreate the past move container
       this.pastMoveContainer = document.createElement("div");
       this.container.appendChild(this.pastMoveContainer);
+      
+      //Recreate the Present indicator element
+      this.presentLine = document.createElement("div");
+      this.presentLine.classList.add("PresentLine");
+      this.presentLine.style.width = (boardWidth/2)*32+"px";
+      this.container.appendChild(this.presentLine);
     }
     
     boardWidth = obj.boardWidth;
@@ -376,7 +537,7 @@ class Field{
             newTimeline.addBoard(b,true);
           }else{
             //Create a new board and add it to the timeline
-            var newBoard = newTimeline.addBoard(b);
+            var newBoard = newTimeline.addBoard(b,false,obj.timelines[t].boards[b].turnColor);
             
             //Set the selectable attribute and the starting layout of the newly added board
             newBoard.setSelectable(obj.timelines[t].boards[b].selectable);
@@ -454,6 +615,7 @@ class Timeline{
         this.boards[a].clone(newTimeline,a);
       }
     }
+    newTimeline.active = this.active;
   }
   
   changeID(newid){
@@ -465,9 +627,15 @@ class Timeline{
     }
   }
   
-  addBoard(bid,nullBoard = false){
+  //Change the active state of the timeline, and set the selectable attribute of the end board
+  setActive(active){
+    this.active = active;
+    ///this.boards[this.boards.length-1].setSelectable(active);
+  }
+  
+  addBoard(bid,nullBoard = false,color = undefined){
     if(!nullBoard){
-      this.boards[bid] = new Board(this,bid,this.hasVisuals);
+      this.boards[bid] = new Board(this,bid,this.hasVisuals,color);
       
       if(this.hasVisuals){
         this.boards[bid].container.style.left = bid*(boardWidth+1)*32+"px";
@@ -560,7 +728,7 @@ class Timeline{
 //The Board class represents an instance of a board which is contained in a Timeline. The Board class contains all the pieces.
 class Board{
   //Parent Timeline, BoardID
-  constructor(timeline,id,render = true){
+  constructor(timeline,id,render = true,color = undefined){
     this.fid = timeline.parent.id;
     this.tid = timeline.id;
     this.id = id;
@@ -573,7 +741,8 @@ class Board{
     
     this.pieceTypeMap = [[]];
     this.pieceIDMap = [[]];
-    this.turnColor = this.id % 2; // 0 = White, 1 = Black
+    //Set the color of the board. This may be supplied through the constructor, set relative to the board to the left (previous board), or made from the ID.
+    this.turnColor = (color == undefined ? ((this.id == 0 || this.parent.boards[this.id-1] == undefined) ? this.id : (this.parent.boards[this.id-1].turnColor+1)) : color) % 2; // 0 = White, 1 = Black
     this.selectable = false;
     
     if(this.hasVisuals){
@@ -601,14 +770,14 @@ class Board{
   }
   
   //Safely clone the current object and all child objects
-  clone(newparenttimeline,cloneid){
+  clone(newparenttimeline,cloneid,color = this.turnColor){
     if(newparenttimeline.boards[cloneid] != undefined){
       console.warn("Warning: Overwriting an existing board");
       newparenttimeline.boards[cloneid].container.remove();
       newparenttimeline.boards[cloneid] = undefined;
     }
     
-    var newBoard = newparenttimeline.addBoard(cloneid);
+    var newBoard = newparenttimeline.addBoard(cloneid,false,color);
     newBoard.setSelectable(this.selectable);
     newBoard.setBlankLayout();
     for(var a = 0;a < this.pieces.length;a += 1){
@@ -626,11 +795,12 @@ class Board{
     //Check if the board is at the end of the current timeline
     if(this.id == this.parent.boards.length-1){
       //Extend the current timeline
-      this.clone(this.parent,this.id+1);
+      this.clone(this.parent,this.id+1,(this.turnColor+1)%2);
       
       if(this.hasVisuals){
         //Scroll the end of the timeline into view
-        this.parent.arrowtriangle.scrollIntoView();
+        this.parent.arrowtriangle.scrollIntoView({behavior: "smooth", block: "center"});
+        //this.parent.arrowtriangle.scrollIntoView(false);
       }
       
       //Make the new instance of the board selectable
@@ -651,19 +821,12 @@ class Board{
         //Add a new timeline to the end of the parent field
         newTimeline = this.parent.parent.addTimeline(newtid,this.hasVisuals);
       }else{
-        //Shift all the timelines down by one and add a new timeline to the start of the parent field's list of timelines
-        for(var a = this.parent.parent.timelines.length-1;a >= 0;a -= 1){
-          this.parent.parent.timelines[a].changeID(a+1);
-        }
+        //Shift all the timelines down by one
+        this.parent.parent.shiftTimelinesDown();
+        
+        //Add a new timeline as ID 0
         newtid = 0;
         newTimeline = this.parent.parent.addTimeline(newtid);
-        
-        //Shift all the movement visuals of the parent field down by one timeline
-        var mv = this.parent.parent.movementVisuals;
-        for(var a = 0;a < mv.length;a += 1){
-          mv[a][0] += 1;
-        }
-        this.parent.parent.refreshMovementVisuals();
       }
       
       //Declare all the empty slots of the new timeline as undefined
@@ -672,7 +835,7 @@ class Board{
       }
       
       //Clone the current instance of the board to the new timeline
-      this.clone(newTimeline,this.id+1);
+      this.clone(newTimeline,this.id+1,(this.turnColor+1)%2);
       
       //Make the new instance of the board selectable
       newTimeline.boards[this.id+1].setSelectable(true);
@@ -955,6 +1118,11 @@ class Piece{
 function selectPiece(piece){
   if(selectedPiece != undefined){
     selectedPiece.deselect();
+    if(selectedPiece == piece){
+      //If the player selects the piece that is already selected, deselect it
+      globalDeselect();
+      return;
+    }
   }
   if(piece.parent.id < piece.parent.parent.boards.length-1){
     console.warn("Huh, that's strange. Is this code modified in any way? If not, you should contact the site admin tell them how to reproduce this warning, because it should never happen.");
@@ -1087,14 +1255,14 @@ function addMoveVisuals(piece,moves){
             var newboard1 = piece.parent.extendTimeline();
             var newboard2 = move[0].extendTimeline();
             
-            //Check if the timeline branched off
-            if(branched){
-              //Check if the branched timeline was created above the rest
-              if(move[0].turnColor != playerColor || (opponent == 1 && move[0].turnColor == 1)){
-                //Re-point "newboard1" to its new instance
-                newboard1 = newboard1.parent.parent.timelines[newboard1.tid+1].boards[newboard1.id];
-              }
-            }
+            //Check if the timeline branched off (Now theoretically redundant code, as of v1.1.0.17)
+            ///if(branched){
+            ///  //Check if the branched timeline was created above the rest
+            ///  if(move[0].turnColor != playerColor || (opponent == 1 && move[0].turnColor == 1)){
+            ///    //Re-point "newboard1" to its new instance
+            ///    newboard1 = newboard1.parent.parent.timelines[newboard1.tid+1].boards[newboard1.id];
+            ///  }
+            ///}
             
             //Confirm that the new boards were successfully created
             if(newboard1 != undefined && newboard2 != undefined){
@@ -1166,6 +1334,8 @@ function addMoveVisuals(piece,moves){
           
           console.log("Captured piece");
         }
+        
+        move[0].parent.parent.updatePresentPosition();
       });
     }
   }
@@ -1192,8 +1362,8 @@ function addMoveVisuals(piece,moves){
     addListener(moves[a]);
     
     //If the "customFunc" variable is a function, add it to a second click event attached to the movement visual
-    if(typeof(customFunc) == "function"){
-      movementVisuals[a].addEventListener("click",customFunc);
+    if(typeof(moves[a][5]) == "function"){
+      movementVisuals[a].addEventListener("click",moves[a][5]);
     }
     
     //If the game is online multiplayer, send the move to the server
@@ -1204,7 +1374,7 @@ function addMoveVisuals(piece,moves){
 }
 
 //Calculate all possible locations that any given piece can move to
-function getAvailableMoves(piece,typeOverride = undefined){
+function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined){
   //Get the type from the piece, or use the supplied one
   var pieceType = (typeOverride == undefined ? piece.type : typeOverride);
   
@@ -1220,7 +1390,7 @@ function getAvailableMoves(piece,typeOverride = undefined){
   function addMoveVisual(board,x,y,type = undefined,target = undefined,customFunc = undefined){
     //board, x, y, type (0 = blocked, 1 = move, 2 = capture), target (target piece, only if capture), custom movement function
     
-    //If the type passed in is undefined, it will be detected automatically from the coordinates
+    //If the type passed in is undefined (or if the type indicates a capture but there is no target piece given), it will be detected automatically from the coordinates
     if(type == undefined || (type == 2 && target == undefined)){
       if(board.pieceTypeMap[y][x] == 0){
         //Indicate that the move is blocked
@@ -1230,16 +1400,15 @@ function getAvailableMoves(piece,typeOverride = undefined){
           //Create a "capture" movement visual
           movementVisualCoords.push([board,x,y,2,board.pieces[ board.pieceIDMap[y][x] ],customFunc]);
         }else{
-          //Create a normal movement visual
-          movementVisualCoords.push([board,x,y,0,undefined,customFunc]);
+          //Create a "blocked" movement visual
+          if(includeBlocked){
+            movementVisualCoords.push([board,x,y,0,undefined,customFunc]);
+          }
         }
       }
     }else{
-      //If the type indicates a capture but there is no target piece given, just make a "blocked" visual
-      if(type == 2 && target == undefined){
-        //Create a "blocked" movement visual
-        movementVisualCoords.push([board,x,y,0,undefined,customFunc]);
-      }else{
+      //Only a "blocked" visual is includeBlocked is true
+      if(includeBlocked || type != 0){
         //Create a normal capture visual
         movementVisualCoords.push([board,x,y,type,target,customFunc]);
       }
@@ -1293,20 +1462,17 @@ function getAvailableMoves(piece,typeOverride = undefined){
     case 1:
       //The Master piece can move anywhere on any board (It's used for debugging purposes, but could also be used as a custom piece, as long as the players manually keep track of where it can move)
       
-      //Loop through all the fields
-      for(var f = 0;f < fields.length;f += 1){
-        //Loop through all the timelines
-        for(var t = 0;t < fields[f].timelines.length;t += 1){
-          //Loop through all the boards
-          for(var b = 0;b < fields[f].timelines[t].boards.length;b += 1){
-            if(fields[f].timelines[t].boards[b] != undefined){
-              var board = fields[f].timelines[t].boards[b];
-              //Loop through all tiles of each board
-              for(var x = 0;x < boardWidth;x += 1){
-                for(var y = 0;y < boardHeight;y += 1){
-                  //Let the function detect which type of visual should be used (available move, blocked move, or capture)
-                  addMoveVisual(board,x,y);
-                }
+      //Loop through all the timelines
+      for(var t = 0;t < fields[0].timelines.length;t += 1){
+        //Loop through all the boards
+        for(var b = 0;b < fields[0].timelines[t].boards.length;b += 1){
+          if(fields[0].timelines[t].boards[b] != undefined){
+            var board = fields[0].timelines[t].boards[b];
+            //Loop through all tiles of each board
+            for(var x = 0;x < boardWidth;x += 1){
+              for(var y = 0;y < boardHeight;y += 1){
+                //Let the function detect which type of visual should be used (available move, blocked move, or capture)
+                addMoveVisual(board,x,y);
               }
             }
           }
@@ -1354,12 +1520,12 @@ function getAvailableMoves(piece,typeOverride = undefined){
       }
       
       //Castling
-      if(piece.moveAmount == 0){
-        if(chosenLayout == 0 || chosenLayout == 4){
+      if(piece.moveAmount == 0 && checkForPieceDanger(piece,false).length < 1){
+        if(chosenLayout == 0 || chosenLayout == 4 || chosenLayout == 5){
           //Default (8x8) board
           
           //Check if the left rook is available to perform a castle
-          if(piece.parent.pieceTypeMap[py][px-4] == 6){
+          if(px-4 >= 0 && piece.parent.pieceTypeMap[py][px-4] == 6){
             if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px-4] ].moveAmount == 0){
               //Check if the space in between is available
               if(piece.parent.pieceTypeMap[py][px-1] == 0 && piece.parent.pieceTypeMap[py][px-2] == 0 && piece.parent.pieceTypeMap[py][px-3] == 0){
@@ -1394,7 +1560,7 @@ function getAvailableMoves(piece,typeOverride = undefined){
           }
           
           //Check if the right rook is available to perform a castle
-          if(piece.parent.pieceTypeMap[py][px+3] == 6){
+          if(px+3 < boardWidth && piece.parent.pieceTypeMap[py][px+3] == 6){
             if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px+3] ].moveAmount == 0){
               //Check if the space in between is available
               if(piece.parent.pieceTypeMap[py][px+1] == 0 && piece.parent.pieceTypeMap[py][px+2] == 0){
@@ -1428,7 +1594,7 @@ function getAvailableMoves(piece,typeOverride = undefined){
             }
           }
         }else{
-          console.warn("Warning: Invalid layout to check for castling");
+          ///console.warn("Invalid layout to check for castling");
         }
       }
       
@@ -1909,7 +2075,7 @@ function checkForPieceDanger(piece,imediateThreat = true){
   var piecesInRange = [];
   
   //Get all the queen and knight moves, centred on the king
-  var combinedMoves = getAvailableMoves(piece,3).concat(getAvailableMoves(piece,5));
+  var combinedMoves = getAvailableMoves(piece,false,3).concat(getAvailableMoves(piece,false,5));
   
   var attackers = [];
   
@@ -2009,7 +2175,7 @@ function checkForMate(){
             //Check that the piece exists and is the same color as the king
             if(piece != undefined && piece.color == king.color){
               //Get all moves the piece can make
-              var moves = getAvailableMoves(piece);
+              var moves = getAvailableMoves(piece,false);
               
               for(var a = 0;a < moves.length;a += 1){
                 if(moves[a][3] > 0){
@@ -2025,7 +2191,7 @@ function checkForMate(){
                   }
                   
                   //Get the equivalent move of the equivalent piece
-                  var move = getAvailableMoves(testPiece)[a];
+                  var move = getAvailableMoves(testPiece,false)[a];
                   
                   if(move[3] == 1){
                     //Code for normal movement:
@@ -2194,6 +2360,8 @@ function newGame(layout = 0){
         //Perform any syncing to/from the server that is required
         setTimeout(routineServerSync,200);
       }
+      
+      fields[0].updatePresentPosition();
     }
     if(this.status == 404){
       throwError("Supplied layout was not found on the server");
@@ -2221,7 +2389,7 @@ function resetGame(){
   
   fields[0].container.remove();
   fields[0] = undefined;
-  newGame();
+  newGame(chosenLayout);
   
   pastMoves = [];
   
@@ -2272,6 +2440,8 @@ function undoMove(){
   if(opponent == 1){
     syncGameToServer();
   }
+  
+  console.log("Reverted gamestate");
 }
 
 //Pretty self-explanatory, make a specified player win the game
@@ -2360,6 +2530,13 @@ function shareGame(){
   }else{
     alert("This game is password protected and must be joined through the main menu");
   }
+}
+
+//Render the entire field to an image (this is handled by a seperate page)
+function saveToImage(){
+  var form = document.getElementById("SaveImageForm");
+  form.data.value = JSON.stringify(fields[0].simplify());
+  form.submit();
 }
 
 
@@ -2466,8 +2643,8 @@ document.getElementById("ImportGameFileInput").addEventListener("change", import
 
 // -- Network code -- //
 
-///const socket = new WebSocket("ws://127.0.0.1:8002");
-var socketOpen = false;
+///socket = new WebSocket("ws://127.0.0.1:8002");
+socketOpen = false;
 ///
 ///var sendData = "Test - "+gameID;
 ///
@@ -2590,6 +2767,8 @@ function syncGameFromServer(){
         fields[0] = new Field(0);
         //Recreate the new field from the imported JSON data
         fields[0].fromSimpleObject(serverObject);
+        
+        fields[0].updatePresentPosition();
         
         console.log("Successfully synced game from server");
       }
@@ -2717,11 +2896,9 @@ function startJS(){
     //Set the main text in the titlebar to something relevant
     document.getElementById("MainSubtitle").innerHTML = "Online Multiplayer - Game ID: "+gameID;
     
-    document.getElementById("ShareBtn").hidden = false;
+    ///document.getElementById("ShareBtn").hidden = false;
     
     newGame(chosenLayout);
-    
-    ///setTimeout(routineServerSync,200);
     
   }else{
     //[Opponent 2] - VS computer

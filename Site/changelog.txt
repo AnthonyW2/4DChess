@@ -6,13 +6,20 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 - Add "The present"
 - Add active and inactive timelines
 
+- Change the way gamestates are stored:
+    Change movement visuals to [B,T,X,Y] instead of [T,B,X,Y] (Reformat them altogether - [B0,T0,X0,Y0, B1,T1,X1,Y1] - this allows for keeping track of moves and easily creating cross-time arrows)
+    Store pieces as simple integer arrays, instead of large object strings
+    Add arrows to indicate time-travel moves
+
+- Change the field class constructor - create a field straight from a simplified object
+- Remove element IDs (theoretically redundant - they're only wasting memory)
 - Change castling move-detection to use a function which takes in 4 params (king starting-pos, rook starting-pos, king post-pos, rook post-pos) and adds a visual if the move is valid.
 
-- Confirm Knight time-travel moves (they may be incorrect)
+- FIx Knight time-travel moves (they should be able to jump over missing boards)
 - Add En Passant
 
 - Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness)
-- Use SVGs for the piece sprites
+- Use SVGs for the piece sprites (maybe have backup PNGs)
 
 - Make pawn promotion give a choice of pieces
 
@@ -37,7 +44,7 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 ~ 5  - Add time-travel moves for the rest of the pieces
 ~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, add server-side protection against attacks)
 ~ 7  - First release (1.0.2.1-1)
-~ 8  - Add a way to detect check or mate.
+~ 8  - Add a way to detect check or checkmate.
  9  > Create option to use websockets. Add move confirmation to online multiplayer.
 10 - Add global & local game settings
 11 - Add computer player functionality
@@ -47,7 +54,11 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 === Version History ===
 
-[24/7/20] (0.0.1.1-0) - Project started
+[24/7/20] (0.0.0.1-0) - Project started
+
+[?/?/20]  (1.0.0.?-0) - First working build, with most 5D moves. New boards are created when pieces are moved, and new timelines when piece time travel.
+
+[?/?/20]  (1.0.1.?-0) - Online multiplayer functional, with no menus and no way to create games.
 
 [13/9/20] (1.0.2.1-1) - First release, including fully functional local multiplayer, online multiplayer, complete set of 5D Chess mechanics, importing/exporting game as JSON and much more. Roughly 3100 SLOC in total.
 
@@ -77,7 +88,17 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 [3/10/20] (1.1.0.13-0) - Past-movement-visual arrays in simplified objects are no longer references, and are now stand-alone arrays.
 
-[3/10/20] (1.1.0.14-0) - Layouts are now in a smaller JSON format, meaning less text to pull from the server. Added the 8x8 turn 0 starting layout. Changed castling move-detection to use normal if clauses instead of switch/case, so that the same code can support multiple layouts.
+[3/10/20] (1.1.0.14-0) - Layouts are now in a smaller JSON format, meaning less text to pull from the server. Added the 8x8 turn 0 starting layout. Changed castling move-detection to use normal if-clauses instead of switch/case, so that the same code can support multiple layouts.
+
+[5/10/20] (1.1.0.15-0) - Changed the way board colors are set. Minor HTML edits.
+
+[8/10/20] (1.1.0.16-0) - Added The Present functionality in the background. Added a page to render a game as a 1:1 scale image. You can no longer castle if in check. You can now deselect pieces.
+
+[11/10/20] (1.1.0.17-0) - Changed the code which shifts all timelines down by one space. Now much more efficient, and less expensive.
+
+[11/10/20] (1.1.0.18-0) - Minor HTML and CSS changes (Fixed scrollIntoView).
+
+[11/10/20] (1.1.0.19-0) - "The Present" will now automatically update its position whenever a move is made. Added some padding field-tiles to make the field feel fuller.
 
 
 

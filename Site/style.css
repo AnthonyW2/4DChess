@@ -121,6 +121,7 @@ Z-Indexes for the game:
 
 5 - Field
 6 - Field grid tile
+7 - The Present indicator line
 
 10 - Timeline
 11 - Arrow shaft (JS)
@@ -168,6 +169,9 @@ Z-Indexes for the game:
   left: 0px;
   color: #eeeeee;
   /*font-family: Times New Roman;*/
+  
+  /* This tells the browser that the game container will change in size, and speeds up rendering */
+  will-change: transform;
 }
 
 
@@ -175,11 +179,15 @@ Z-Indexes for the game:
 .Field {
   position: absolute;
   z-index: 5;
+  
+  will-change: transform;
 }
 
 .Timeline {
   position: absolute;
   z-index: 10;
+  
+  will-change: transform;
 }
 
 .Board {
@@ -265,6 +273,16 @@ Z-Indexes for the game:
   width: 32px;
   height: 32px;
   pointer-events: none;
+}
+
+/* The large vertical line indicating The Present */
+.PresentLine {
+  position: absolute;
+  z-index: 7;
+  
+  border-style: solid;
+  border-width: 4px;
+  border-color: #808080;
 }
 
 
