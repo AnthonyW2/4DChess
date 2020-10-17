@@ -11,22 +11,28 @@ Protected by the GNU General Public License V3
 13 September 2020
 13/9/20
 
+- Release 1.1:
+17 October 2020
+17/10/20
+
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
-While the game concept is not completely ours, this entire site was written from the ground up, so the code is entirely ours.
+While the game concept is not completely mine, this entire site was written from the ground up, so the code is entirely owned by me.
 
 See https://github.com/AnthonyW2/4DChess for the complete source code.
 
-Version: 1.0.2.1-1
+Version: 1.1.0.25-0
 -->
 
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <title>4D Chess 1.0</title>
+    <title>4D Chess 1.1</title>
     <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="main.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="author" content="Anthony Wilson">
+    <meta name="description" content="This is an open-source game heavily inspired by '5D Chess With Multiverse Time Travel'">
     
     <link rel="icon" type="image/png" href="Resources/Favicon64x64.png" sizes="64x64">
     <link rel="icon" type="image/png" href="Resources/Favicon96x96.png" sizes="96x96">
@@ -34,12 +40,10 @@ Version: 1.0.2.1-1
     <link rel="shortcut icon" type="image/png" href="Resources/Favicon96x96.png">
     <link rel="apple-touch-icon" href="Resources/TouchIcon256x256.png">
     
-    <meta name="description" content="This is an open-source game heavily inspired by '5D Chess With Multiverse Time Travel'">
-    
-    <meta property="og:title" content="4D Chess">
+    <meta property="og:title" content="4D Chess 1.1">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="http://101.188.168.172/4DChessV1.0/">
-    <meta property="og:image" content="/4DChessV1.0/OpenGraphicsImg.png">
+    <!--meta property="og:url" content="http://101.188.168.172/4DChessV1.1/"-->
+    <meta property="og:image" content="/4DChessV1.1/OpenGraphicsImg.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="256">
     <meta property="og:image:height" content="256">
@@ -47,7 +51,7 @@ Version: 1.0.2.1-1
   </head>
   <body class="up1line">
     <h1>4 Dimensional Chess</h1>
-    <p>This is an open-source game heavily inspired by <a href="https://store.steampowered.com/app/1349230/5D_Chess_With_Multiverse_Time_Travel/">5D Chess With Multiverse Time Travel</a><br>This is version 1.0.2 (Build 1, Release 1) - the first version out of Alpha!</p>
+    <p>This is an open-source game heavily inspired by <a href="https://store.steampowered.com/app/1349230/5D_Chess_With_Multiverse_Time_Travel/">5D Chess With Multiverse Time Travel</a><br>This is version 1.1.0, you can check out the current version at <a href="../4DChess/">this page</a></p>
     <p>Check out the source code for this site at <a href="https://github.com/AnthonyW2/4DChess">github.com/AnthonyW2/4DChess</a></p>
     
     <!--This is a container for the main menu that will get hidden & replaced by another container when a button is pressed.-->
@@ -81,6 +85,11 @@ Version: 1.0.2.1-1
             <option value="1">4x4 - King in the middle</option>
             <option value="2">4x4 - King in the corner</option>
             <option value="3">5x5 - Simple (All pieces)</option>
+            <option value="4">8x8 - Turn 0</option>
+            <option value="5">8x8 - Turn -1</option>
+            <option value="6">6x6 - Simple (All pieces)</option>
+            <option value="7">6x6 - Black bishops, white knights</option>
+            <option value="8">8x8 - Defended Pawn</option>
           </select>
           <br><br>
           <button class="MenuButton" id="LocalNewGameBtn" onclick="NewLocalGame()">New Game</button>
@@ -122,6 +131,11 @@ Version: 1.0.2.1-1
             <option value="1">4x4 - King in the middle</option>
             <option value="2">4x4 - King in the corner</option>
             <option value="3">5x5 - Simple (All pieces)</option>
+            <option value="4">8x8 - Turn 0</option>
+            <option value="5">8x8 - Turn -1</option>
+            <option value="6">6x6 - Simple (All pieces)</option>
+            <option value="7">6x6 - Black bishops, white knights</option>
+            <option value="8">8x8 - Defended Pawn</option>
           </select>
           <br><br>
           <div>
@@ -150,13 +164,19 @@ Version: 1.0.2.1-1
     <div id="SettingsMenu" hidden>
       <h2>Settings</h2>
       <button class="MenuButton" id="MainMenuBtn" onclick="MainMenu()">Main Menu</button><br>
-      <p>[Settings? Who needs settings?]</p>
+      <p>[Global settings are coming soon(ish)]</p>
     </div>
     
     <div id="RulesMenu" hidden>
       <h2>Rules</h2>
       <button class="MenuButton" id="MainMenuBtn" onclick="MainMenu()">Main Menu</button><br>
-      <p>[There's a lot of rules, we're still working on getting them all together]</p>
+      <p>
+        [There's a lot of rules, we're still working on getting them all together]
+        <br>
+        For now, see <a href="https://gameplay.tips/guides/8165-5d-chess-with-multiverse-time-travel.html">this site</a> for how to play 5D Chess With Multiverse Time Travel
+      </p>
     </div>
+    
+    <script src="menu.js"></script>
   </body>
 </html>
