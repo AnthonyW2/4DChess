@@ -121,7 +121,7 @@ Z-Indexes for the game:
 
 5 - Field
 6 - Field grid tile
-7 - The Present indicator line
+7 - "The Present" indicator line
 
 10 - Timeline
 11 - Arrow shaft (JS)
@@ -170,8 +170,8 @@ Z-Indexes for the game:
   color: #eeeeee;
   /*font-family: Times New Roman;*/
   
-  /* This tells the browser that the game container will change in size, and speeds up rendering */
-  will-change: transform;
+  /* This tells the browser that the game container will change in size, and can speed up rendering */
+  /*will-change: transform;*/
 }
 
 

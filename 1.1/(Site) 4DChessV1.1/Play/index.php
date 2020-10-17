@@ -13,6 +13,7 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
 -->
 
 <?php
+  //$chessroot = "/tmp/4DChess";
   $chessroot = "/srv/store/4DChessV1.1";
   
   $opponent = $_REQUEST["vs"];

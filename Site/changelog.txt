@@ -3,23 +3,24 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 
 === TO DO ===
-- Add "The present"
-- Add active and inactive timelines
-
 - Change the way gamestates are stored:
-    Change movement visuals to [B,T,X,Y] instead of [T,B,X,Y] (Reformat them altogether - [B0,T0,X0,Y0, B1,T1,X1,Y1] - this allows for keeping track of moves and easily creating cross-time arrows)
-    Store pieces as simple integer arrays, instead of large object strings
-    Add arrows to indicate time-travel moves
+  > Change movement visuals to [B,T,X,Y] instead of [T,B,X,Y] (Reformat them altogether - [B0,T0,X0,Y0, B1,T1,X1,Y1, {Extra data}] - this allows for keeping track of moves and easily creating cross-time arrows)
+  > Store pieces as simple integer arrays, instead of large object strings
+  > Add arrows to indicate time-travel moves
+  > Add timeline "ancestor"s. This should be a simple integer, which is a RELATIVE reference to the timeline that the target timeline was created from.
+  > Add layout identifiers (useful for checking for castling)
+
+- Seperate the game.js file into "API" and "Game control"
 
 - Change the field class constructor - create a field straight from a simplified object
-- Remove element IDs (theoretically redundant - they're only wasting memory)
-- Change castling move-detection to use a function which takes in 4 params (king starting-pos, rook starting-pos, king post-pos, rook post-pos) and adds a visual if the move is valid.
 
-- FIx Knight time-travel moves (they should be able to jump over missing boards)
-- Add En Passant
+- Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness) (Will require gamestate change)
+- Use SVGs for the piece sprites
+- Change Import/Export game menu - looks horrible at the moment
+- Add icons to the buttons
+- Change the titlebar?
 
-- Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness)
-- Use SVGs for the piece sprites (maybe have backup PNGs)
+- Add a visual indicator for kings in check (detect automatically?)
 
 - Make pawn promotion give a choice of pieces
 
@@ -28,11 +29,16 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 - Add "How to Play" and "Credits"
 - Add chess clock (options in global settings)
 
-- Add per-game chat for online multiplayer
 - Add move confirmation to online multiplayer
+- Add per-game chat for online multiplayer
 - Fix online multiplayer POV (specifically for Black)
 - Add a "spectate"/"view only" mode for online multiplayer
 - Use websockets for online multiplayer (hosted with NodeJS)
+
+- Add a save-conversion page:
+  > My JSON format to Alexbay218's notation
+  > My JSON format to Alexbay218's JSON format
+  > Alexbay218's notation to my JSON format
 
 
 
@@ -56,7 +62,7 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 [24/7/20] (0.0.0.1-0) - Project started
 
-[?/?/20]  (1.0.0.?-0) - First working build, with most 5D moves. New boards are created when pieces are moved, and new timelines when piece time travel.
+[?/?/20]  (1.0.0.?-0) - First working build, with most 5D moves. New boards are created when pieces are moved, and new timelines when pieces time travel.
 
 [?/?/20]  (1.0.1.?-0) - Online multiplayer functional, with no menus and no way to create games.
 
@@ -99,6 +105,18 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 [11/10/20] (1.1.0.18-0) - Minor HTML and CSS changes (Fixed scrollIntoView).
 
 [11/10/20] (1.1.0.19-0) - "The Present" will now automatically update its position whenever a move is made. Added some padding field-tiles to make the field feel fuller.
+
+[12/10/20] (1.1.0.20-0) - Fixed the knight time-travel moves. Added En Passant.
+
+[12/10/20] (1.1.0.21-0) - Modified En Passant code. Compressed some nested if clauses.
+
+[12/10/20] (1.1.0.22-0) - Changed castling detection code to a function. Added castling to the "Defended Pawn" layout.
+
+[14/10/20] (1.1.0.23-0) - Removed "fullid" object attributes. Removed element IDs.
+
+[17/10/20] (1.1.0.24-0) - Checkmate in now properly detected if the opponent can immediately move their attacking piece.
+
+[17/10/20] (1.1.0.25-0) - Fixed a small bug causing "The Present" indicator element to have the wrong width.
 
 
 

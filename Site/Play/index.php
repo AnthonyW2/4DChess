@@ -121,7 +121,6 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
     <link rel="shortcut icon" type="image/png" href="../Resources/Favicon96x96.png">
     <link rel="apple-touch-icon" href="../Resources/TouchIcon256x256.png">
     
-    <!--meta property="og:title" content="4D Chess - Play (<?php echo $gameid; ?>)"-->
     <meta property="og:title" content="<?php echo $og_title; ?>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?php echo $urlpath; ?>">
@@ -133,7 +132,7 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
   </head>
   <body onload="startJS()">
     <div id="TitleBar">
-      <h2 id="MainSubtitle">[Something went wrong. Please make sure javascript is enabled.]</h2>
+      <h2 id="MainSubtitle">[Something went wrong, please make sure javascript is enabled]</h2>
       <h2 id="ColourSubtitle"></h2>
       
       <button class="MenuButton up1line" id="HideTitleBarBtn" onclick="toggleTitleBar()">Hide Title Bar</button>
@@ -154,7 +153,7 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
     </div>
     
     <div id="Game">
-      <p>Something went wrong.<br>Make sure that javascript is enabled in your browser and allowed on this site and make sure to check your plugins.<br>If the problem persists, send an error ticket <a href="">here</a>.</p>
+      <p>Something went wrong.<br>Make sure that javascript is enabled in your browser & allowed on this site and make sure to check your plugins.<br>If the problem persists, send an error ticket <a href="">here</a>.</p>
     </div>
     
     <div id="ImportGamePopup" hidden>

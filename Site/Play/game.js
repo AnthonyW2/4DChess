@@ -11,15 +11,15 @@
 //13/9/20
 
 // 1.1 Release:
-//- October 2020
-//-/10/20
+//17 October 2020
+//17/10/20
 
 
 
 "use strict";
 
 // (Maj Version).(Min Version).(Patch).(Build)-(Release)
-const version = "1.1.0.19-0";
+const version = "1.1.0.25-0";
 
 
 
@@ -95,7 +95,9 @@ const pieceNames = [
   "Rook",     // 6
   "Pawn",     // 7
   "Unicorn",  // 8
-  "Dragon"    // 9
+  "Dragon",   // 9
+  "Princess", // 10
+  "Brawn"     // 11
 ];
 
 //The icon paths of all the pieces
@@ -110,7 +112,9 @@ const pieceIconPaths = [
     "../Resources/Pieces/64px/RookW.png",
     "../Resources/Pieces/64px/PawnW.png",
     "", // Unicorn icon
-    ""  // Dragon icon
+    "", // Dragon icon
+    "", // Princess icon
+    ""  // Brawn icon
   ],
   [ // Black pieces
     "",
@@ -122,7 +126,9 @@ const pieceIconPaths = [
     "../Resources/Pieces/64px/RookB.png",
     "../Resources/Pieces/64px/PawnB.png",
     "", // Unicorn icon
-    ""  // Dragon icon
+    "", // Dragon icon
+    "", // Princess icon
+    ""  // Brawn icon
   ]
 ];
 
@@ -142,8 +148,6 @@ class Field{
     
     this.hasVisuals = render;
     
-    this.fullid = "F"+this.id;
-    
     this.presentPosition = 0;
     this.movementVisuals = [];
     
@@ -152,7 +156,6 @@ class Field{
     
     if(this.hasVisuals){
       this.container = document.createElement("div");
-      this.container.id = this.fullid;
       this.container.classList.add("Field");
       this.container.innerHTML = "";
       gameContainer.appendChild(this.container);
@@ -186,16 +189,16 @@ class Field{
   }
   
   //Change the ID of the field (currently unused)
-  changeID(newid){
-    if(this.id != newid){
-      var newField = this.clone(newid);
-      this.container.remove();
-      return newField;
-    }else{
-      console.warn("Warning: Attempted to change the ID of Field "+this.id+" to its own ID");
-      return undefined;
-    }
-  }
+  ///changeID(newid){
+  ///  if(this.id != newid){
+  ///    var newField = this.clone(newid);
+  ///    this.container.remove();
+  ///    return newField;
+  ///  }else{
+  ///    console.warn("Warning: Attempted to change the ID of Field "+this.id+" to its own ID");
+  ///    return undefined;
+  ///  }
+  ///}
   
   //Add a new timeline with a specified ID (tid) to the field
   addTimeline(tid){
@@ -213,22 +216,21 @@ class Field{
   shiftTimelinesDown(){
     //Loop through all timeline, bottom to top
     for(var t = this.timelines.length-1;t >= 0;t -= 1){
+      //Modify the ID
       this.timelines[t].id = t+1;
-      this.timelines[t].fullid = "F"+this.timelines[t].fid+"-T"+(t+1);
-      this.timelines[t].container.id = this.timelines[t].fullid;
-      this.timelines[t].container.style.top = ((t+2)*(boardHeight+1)*32+16-boardOffset)+"px";
+      if(this.hasVisuals){
+        //Move the container
+        this.timelines[t].container.style.top = ((t+2)*(boardHeight+1)*32+16-boardOffset)+"px";
+      }
       
+      //Loop through the child boards and pieces, updating their TIDs
       for(var b = 0;b < this.timelines[t].boards.length;b += 1){
         var board = this.timelines[t].boards[b];
         if(board != undefined){
           board.tid = t+1;
-          board.fullid = "F"+board.fid+"-T"+(t+1)+"-B"+board.id;
-          board.container.id = board.fullid;
           for(var p = 0;p < board.pieces.length;p += 1){
             if(board.pieces[p] != undefined){
               board.pieces[p].tid = t+1;
-              board.pieces[p].fullid = "F"+board.pieces[p].fid+"-T"+(t+1)+"-B"+board.pieces[p].bid+"-P"+board.pieces[p].id;
-              board.pieces[p].container.id = board.pieces[p].fullid;
             }
           }
         }
@@ -244,8 +246,6 @@ class Field{
       mv[a][0] += 1;
     }
     this.refreshMovementVisuals();
-    
-    console.log(this.timelines);
   }
   
   //Remove a timeline from the field (only used for changing the ID of a timeline)
@@ -488,11 +488,13 @@ class Field{
       }
     }
     
+    boardWidth = obj.boardWidth;
+    boardHeight = obj.boardHeight;
+    
     if(this.hasVisuals){
       //Remove and recreate the main container element
       this.container.remove();
       this.container = document.createElement("div");
-      this.container.id = this.fullid;
       this.container.classList.add("Field");
       this.container.innerHTML = "";
       gameContainer.appendChild(this.container);
@@ -512,9 +514,6 @@ class Field{
       this.presentLine.style.width = (boardWidth/2)*32+"px";
       this.container.appendChild(this.presentLine);
     }
-    
-    boardWidth = obj.boardWidth;
-    boardHeight = obj.boardHeight;
     
     //Restore the total amount of moves made
     this.moveAmounts = obj.moveAmounts.slice();
@@ -585,15 +584,14 @@ class Timeline{
     this.boards = [];
     this.parent = field;
     
-    this.hasVisuals = render;
+    this.ancestor = 0;
     
-    this.fullid = "F"+this.fid+"-T"+this.id;
+    this.hasVisuals = render;
     
     this.active = true;
     
     if(this.hasVisuals){
       this.container = document.createElement("div");
-      this.container.id = this.fullid;
       this.container.classList.add("Timeline");
       this.container.innerHTML = "";
       this.parent.container.appendChild(this.container);
@@ -737,8 +735,6 @@ class Board{
     
     this.hasVisuals = render;
     
-    this.fullid = "F"+this.fid+"-T"+this.tid+"-B"+this.id;
-    
     this.pieceTypeMap = [[]];
     this.pieceIDMap = [[]];
     //Set the color of the board. This may be supplied through the constructor, set relative to the board to the left (previous board), or made from the ID.
@@ -747,7 +743,6 @@ class Board{
     
     if(this.hasVisuals){
       this.container = document.createElement("div");
-      this.container.id = this.fullid;
       this.container.classList.add("Board");
       this.container.innerHTML = "";
       this.parent.container.appendChild(this.container);
@@ -972,8 +967,6 @@ class Piece{
     
     this.hasVisuals = render;
     
-    this.fullid = "F"+this.fid+"-T"+this.tid+"-B"+this.bid+"-P"+this.id;
-    
     this.x = 0;
     this.y = 0;
     
@@ -986,7 +979,6 @@ class Piece{
     
     if(this.hasVisuals){
       this.container = document.createElement("div");
-      this.container.id = this.fullid;
       this.container.classList.add("Piece");
       this.container.innerHTML = "[P]";
       this.parent.container.appendChild(this.container);
@@ -1031,10 +1023,6 @@ class Piece{
   
   changeID(newid){
     this.id = newid;
-    this.fullid = "F"+this.fid+"-T"+this.tid+"-B"+this.bid+"-P"+this.id;
-    if(this.hasVisuals){
-      this.container.id = this.fullid;
-    }
   }
   
   render(){
@@ -1249,7 +1237,7 @@ function addMoveVisuals(piece,moves){
             }
           }else{
             //The extra code related to this variable is there to re-point "newboard1" to the new instance of its board if the timeline branches (and the other timelines are shifted down)
-            var branched = (move[0].id < move[0].parent.boards.length-1);
+            ///var branched = (move[0].id < move[0].parent.boards.length-1);
             
             //Create a new board and branch the timeline when a piece time travels
             var newboard1 = piece.parent.extendTimeline();
@@ -1273,7 +1261,7 @@ function addMoveVisuals(piece,moves){
             }
           }
           
-          console.log("Moved piece");
+          ///console.log("Moved piece");
         }else if(move[3] == 2){
           //Code for capturing:
           
@@ -1301,20 +1289,20 @@ function addMoveVisuals(piece,moves){
             //Move the capturing piece to its new position
             movePiece(newboard.pieces[piece.id],move[1],move[2]);
           }else{
-            var branched = (move[4].parent.id < move[4].parent.parent.boards.length-1);
+            ///var branched = (move[4].parent.id < move[4].parent.parent.boards.length-1);
             
             //Extend both timelines
             var newboard1 = piece.parent.extendTimeline();
             var newboard2 = move[4].parent.extendTimeline();
             
             //Check if the timeline branched off
-            if(branched){
-              //Check if the branched timeline was created above the rest
-              if(move[4].parent.turnColor != playerColor || (opponent == 1 && move[4].parent.turnColor == 1)){
-                //Re-point "newboard1" to its new instance
-                newboard1 = newboard1.parent.parent.timelines[newboard1.tid+1].boards[newboard1.id];
-              }
-            }
+            ///if(branched){
+            ///  //Check if the branched timeline was created above the rest
+            ///  if(move[4].parent.turnColor != playerColor || (opponent == 1 && move[4].parent.turnColor == 1)){
+            ///    //Re-point "newboard1" to its new instance
+            ///    newboard1 = newboard1.parent.parent.timelines[newboard1.tid+1].boards[newboard1.id];
+            ///  }
+            ///}
             
             //Make sure the new boards were created properly
             if(newboard1 == undefined || newboard2 == undefined){
@@ -1332,7 +1320,7 @@ function addMoveVisuals(piece,moves){
             movePiece(newboard1.pieces[piece.id],move[1],move[2],newboard2);
           }
           
-          console.log("Captured piece");
+          ///console.log("Captured piece");
         }
         
         move[0].parent.parent.updatePresentPosition();
@@ -1417,17 +1405,14 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
   
   //Checks for the existence of a board and timeline (the ID of each is found by the given board & timeline "offset")
   function checkForRelativeBoard(bOffset,tOffset,startingBoard = piece.parent){
-    //Yes, I am quite aware that I can combine these into one if clause, but there's no point, and this is far more readable
-    if(startingBoard.id+bOffset >= 0){
-      if(startingBoard.parent.id+tOffset >= 0){
-        if(startingBoard.parent.id+tOffset < startingBoard.parent.parent.timelines.length){
-          if(startingBoard.id+bOffset < startingBoard.parent.parent.timelines[ startingBoard.parent.id+tOffset ].boards.length){
-            if(startingBoard.parent.parent.timelines[ startingBoard.parent.id+tOffset ].boards[ startingBoard.id+bOffset ] != undefined){
-              return true;
-            }
-          }
-        }
-      }
+    if(
+      startingBoard.id+bOffset >= 0 &&
+      startingBoard.parent.id+tOffset >= 0 &&
+      startingBoard.parent.id+tOffset < startingBoard.parent.parent.timelines.length &&
+      startingBoard.id+bOffset < startingBoard.parent.parent.timelines[ startingBoard.parent.id+tOffset ].boards.length &&
+      startingBoard.parent.parent.timelines[ startingBoard.parent.id+tOffset ].boards[ startingBoard.id+bOffset ] != undefined
+    ){
+      return true;
     }
     return false;
   }
@@ -1519,85 +1504,63 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
         }
       }
       
-      //Castling
-      if(piece.moveAmount == 0 && checkForPieceDanger(piece,false).length < 1){
-        if(chosenLayout == 0 || chosenLayout == 4 || chosenLayout == 5){
-          //Default (8x8) board
-          
-          //Check if the left rook is available to perform a castle
-          if(px-4 >= 0 && piece.parent.pieceTypeMap[py][px-4] == 6){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px-4] ].moveAmount == 0){
-              //Check if the space in between is available
-              if(piece.parent.pieceTypeMap[py][px-1] == 0 && piece.parent.pieceTypeMap[py][px-2] == 0 && piece.parent.pieceTypeMap[py][px-3] == 0){
-                //Store the parent timeline and the ID of the new board outside of the function
-                var parentTimeline = piece.parent.parent;
-                var newBoardId = parentTimeline.boards.length;
-                
-                //Add a movement visual with an extra custom function
-                addMoveVisual(piece.parent,px-3,py,1,undefined,function(){
-                  console.log("Castled");
-                  
-                  //Store the new board and the targetted rook objects
-                  var newBoard = parentTimeline.boards[newBoardId];
-                  var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px-4] ];
-                  
-                  //Update the piece maps
-                  newBoard.pieceTypeMap[py][px-4] = 0;
-                  newBoard.pieceIDMap[py][px-4] = -1;
-                  newBoard.pieceTypeMap[py][px-1] = targetRook.type;
-                  newBoard.pieceIDMap[py][px-1] = targetRook.id;
-                  
-                  //Move the rook to its new position
-                  targetRook.setX(px-1);
-                  
-                  //Increment the amount of moves the rook has made
-                  targetRook.moveAmount += 1;
-                });
-              }else{
-                addMoveVisual(piece.parent,px-3,py,0);
+      //Check for castling possibility (rx = Rook start X, kxe = King end X, rxe = Rook end X)
+      function checkCastling(rx,kxe,rxe){
+        //Check if the position has a rook present
+        if(piece.parent.pieceTypeMap[py][rx] == 6){
+          if(piece.parent.pieces[ piece.parent.pieceIDMap[py][rx] ].moveAmount == 0){
+            
+            var dir = Math.sign(rx-px);
+            
+            //Check if the space in between is available
+            for(var a = px+dir;a != rx;a += dir){
+              if(piece.parent.pieceTypeMap[py][a] != 0){
+                return;
               }
             }
+            
+            //Store the parent timeline and the ID of the new board outside of the function
+            var parentTimeline = piece.parent.parent;
+            var newBoardId = parentTimeline.boards.length;
+            
+            //Add a movement visual with an extra custom function
+            addMoveVisual(piece.parent,kxe,py,1,undefined,function(){
+              //Store the new board and the targetted rook objects
+              var newBoard = parentTimeline.boards[newBoardId];
+              var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][rx] ];
+              
+              //Update the piece maps
+              newBoard.pieceTypeMap[py][rx] = 0;
+              newBoard.pieceIDMap[py][rx] = -1;
+              newBoard.pieceTypeMap[py][rxe] = targetRook.type;
+              newBoard.pieceIDMap[py][rxe] = targetRook.id;
+              
+              //Move the rook to its new position
+              targetRook.setX(rxe);
+              
+              //Increment the amount of moves the rook has made
+              targetRook.moveAmount += 1;
+            });
+          }else{
+            addMoveVisual(piece.parent,kxe,py,0);
           }
-          
-          //Check if the right rook is available to perform a castle
-          if(px+3 < boardWidth && piece.parent.pieceTypeMap[py][px+3] == 6){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[py][px+3] ].moveAmount == 0){
-              //Check if the space in between is available
-              if(piece.parent.pieceTypeMap[py][px+1] == 0 && piece.parent.pieceTypeMap[py][px+2] == 0){
-                //Store the parent timeline and the ID of the new board outside of the function
-                var parentTimeline = piece.parent.parent;
-                var newBoardId = parentTimeline.boards.length;
-                
-                //Add a movement visual with an extra custom function
-                addMoveVisual(piece.parent,px+2,py,1,undefined,function(){
-                  console.log("Castled");
-                  
-                  //Store the new board and the targetted rook objects
-                  var newBoard = parentTimeline.boards[newBoardId];
-                  var targetRook = newBoard.pieces[ piece.parent.pieceIDMap[py][px+3] ];
-                  
-                  //Update the piece maps
-                  newBoard.pieceTypeMap[py][px+3] = 0;
-                  newBoard.pieceIDMap[py][px+3] = -1;
-                  newBoard.pieceTypeMap[py][px+1] = targetRook.type;
-                  newBoard.pieceIDMap[py][px+1] = targetRook.id;
-                  
-                  //Move the rook to its new position
-                  targetRook.setX(px+1);
-                  
-                  //Increment the amount of moves the rook has made
-                  targetRook.moveAmount += 1;
-                });
-              }else{
-                addMoveVisual(piece.parent,px+2,py,0);
-              }
-            }
-          }
-        }else{
-          ///console.warn("Invalid layout to check for castling");
         }
       }
       
+      //Call the above function for the various layouts
+      if(piece.moveAmount == 0 && checkForPieceDanger(piece,false).length < 1){
+        if((chosenLayout == 0 || chosenLayout == 4 || chosenLayout == 5) && boardWidth == 8){
+          //Default board (8x8)
+          
+          checkCastling(7,6,5);
+          checkCastling(0,2,3);
+        }else if((chosenLayout == 8) && boardWidth == 8){
+          //Defended pawn (8x8)
+          
+          checkCastling(7,5,4);
+          checkCastling(0,1,2);
+        }
+      }
       break;
     case 3:
       //The Queen can move in any one direction by an unlimited amount of spaces
@@ -1795,56 +1758,31 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
         }
       }
       
-      //Use a recursive function to calculate the time-travel moves of the knight
-      function checkKnightMoves(board,iteration,direction){
+      //Calculate the time-travel moves of the knight
+      function checkKnightMoves(board,distance,direction){
         //Loop through the 4 orthogonal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
         for(var dir = 0;dir < 4;dir += 1){
-          //Check which iteration the function is up to
-          switch(iteration){
-            case 0:
-              //Calculate the coordinates of the movement visual
-              var _x = px+((dir < 2)?2-(dir%2)*4:0);
-              var _y = py+((dir < 2)?0:2-(dir%2)*4);
-              
-              //Check that the visual is within the bounds of the board
-              if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
-                addMoveVisual(board,_x,_y);
-              }
-              
-              //Execute the function for the next board in line
-              if(dir == direction){
-                //Check if the target board exists
-                if(checkForRelativeBoard((dir < 2)?2-(dir%2)*4:0,(dir < 2)?0:1-(dir%2)*2,board)){
-                  var nextboard = board.parent.parent.timelines[ board.parent.id+((dir < 2)?0:1-(dir%2)*2) ].boards[ board.id+((dir < 2)?2-(dir%2)*4:0) ];
-                  
-                  checkKnightMoves(nextboard,iteration+1,dir);
-                }
-              }
-              
-              break;
-            case 1:
-              //Calculate the coordinates of the movement visual
-              var _x = px+((dir < 2)?1-(dir%2)*2:0);
-              var _y = py+((dir < 2)?0:1-(dir%2)*2);
-              
-              //Check that the visual is within the bounds of the board
-              if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
-                addMoveVisual(board,_x,_y);
-              }
-              break;
-            default:
-              console.warn("Warning: Reached an invalid amount of iterations while attempting to calcuate knight time-travel moves");
+          //Calculate the coordinates of the movement visual
+          var _x = px+((dir < 2)?distance-(dir%2)*2*distance:0);
+          var _y = py+((dir < 2)?0:distance-(dir%2)*2*distance);
+          
+          //Check that the visual is within the bounds of the board
+          if(_x >= 0 && _y >= 0 && _x < boardWidth && _y < boardHeight){
+            addMoveVisual(board,_x,_y);
           }
         }
       }
       
       //Loop through the 4 orthogonal directions (0 = Left/East, 2 = Right/West, 3 = Down/South, 4 = Up/North)
       for(var dir = 0;dir < 4;dir += 1){
-        //Check that the target board exists
-        if(checkForRelativeBoard((dir < 2)?2-(dir%2)*4:0,(dir < 2)?0:1-(dir%2)*2)){
-          var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+((dir < 2)?0:1-(dir%2)*2) ].boards[ piece.parent.id+((dir < 2)?2-(dir%2)*4:0) ];
-          //Call the function for each direction
-          checkKnightMoves(board,0,dir);
+        //Call the function twice per direction
+        for(var a = 1;a <= 2;a += 1){
+          //Check that the target board exists
+          if(checkForRelativeBoard(((dir < 2)?2-(dir%2)*4:0)*a,((dir < 2)?0:1-(dir%2)*2)*a)){
+            var board = piece.parent.parent.parent.timelines[ piece.parent.parent.id+((dir < 2)?0:1-(dir%2)*2)*a ].boards[ piece.parent.id+((dir < 2)?2-(dir%2)*4:0)*a ];
+            //Call the function for each direction
+            checkKnightMoves(board,3-a,dir);
+          }
         }
       }
       
@@ -1905,28 +1843,17 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
     case 7:
       //Pawns can move forward by one (or forward by 2 if it's their first move). They can take forward-diagonally.
       
-      ///For future En Passant: check the previous board in the timeline (only if there is one) and if the target pawn has moved once, and if fits the conditions, add a movement visual to the array with a different coordinate than the target piece
-      
       //The movement direction of the pawn
       var dir = 1;
       
-      if(piece.direction == -1 || piece.direction == undefined){
+      if(piece.direction == -1 || piece.direction == undefined || piece.direction > 1){
         //Test whether the piece should move updard or downward (relative to the player's view)
         if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
           dir = -1;
         }
       }else{
-        if(piece.direction < 2){
-          // Direction 0 = White
-          dir = (piece.direction == 0?-1:1);
-        }else{
-          /// Yet to implement (this will allow for more than 2 players, if I ever even get around to that)
-          
-          /// Placeholder
-          if(piece.color === playerColor && !(opponent == 1 && playerColor == 1)){
-            dir = -1;
-          }
-        }
+        // Direction 0 = White
+        dir = (piece.direction == 0?-1:1);
       }
       
       //Make sure that the pawn is not at the end of the board, but allow for the pawn to be at the very back (for custom layouts)
@@ -1940,33 +1867,57 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
         
         //Allow the piece to capture on the forward-right diagonal
         if(px+1 < boardWidth){
-          if(piece.parent.pieceTypeMap[ py+dir ][ px+1 ] != 0){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+dir ][ px+1 ] ].color != piece.color){
-              addMoveVisual(piece.parent,px+1,py+dir,2);
+          //Normal capture
+          if(piece.parent.pieceTypeMap[py+dir][px+1] != 0 && piece.parent.pieces[ piece.parent.pieceIDMap[py+dir][px+1] ].color != piece.color){
+            addMoveVisual(piece.parent,px+1,py+dir,2);
+          }else{
+            //Check for En Passant
+            if(
+              py+dir*2 < boardHeight &&
+              py+dir*2 >= 0 &&
+              piece.parent.pieceTypeMap[py][px+1] == 7 &&
+              checkForRelativeBoard(-1,0) &&
+              piece.parent.parent.boards[piece.bid-1].pieceTypeMap[py+dir*2][px+1] == 7 &&
+              piece.parent.pieces[ piece.parent.pieceIDMap[py][px+1] ].color != piece.color &&
+              piece.parent.pieces[ piece.parent.pieceIDMap[py][px+1] ].moveAmount == 1
+            ){
+              addMoveVisual(piece.parent,px+1,py+dir,2,piece.parent.pieces[ piece.parent.pieceIDMap[py][px+1] ]);
             }else{
               addMoveVisual(piece.parent,px+1,py+dir,0);
             }
-          }else{
-            addMoveVisual(piece.parent,px+1,py+dir,0);
           }
         }
         
         //Allow the piece to capture on the forward-left diagonal
         if(px-1 >= 0){
-          if(piece.parent.pieceTypeMap[ py+dir ][ px-1 ] != 0){
-            if(piece.parent.pieces[ piece.parent.pieceIDMap[ py+dir ][ px-1 ] ].color != piece.color){
+          //Normal capture
+          if(piece.parent.pieceTypeMap[py+dir][px-1] != 0){
+            if(piece.parent.pieces[ piece.parent.pieceIDMap[py+dir][px-1] ].color != piece.color){
               addMoveVisual(piece.parent,px-1,py+dir,2);
             }else{
               addMoveVisual(piece.parent,px-1,py+dir,0);
             }
           }else{
-            addMoveVisual(piece.parent,px-1,py+dir,0);
+            //Check for En Passant
+            if(
+              py+dir*2 < boardHeight &&
+              py+dir*2 >= 0 &&
+              piece.parent.pieceTypeMap[py][px-1] == 7 &&
+              checkForRelativeBoard(-1,0) &&
+              piece.parent.parent.boards[piece.bid-1].pieceTypeMap[py+dir*2][px-1] == 7 &&
+              piece.parent.pieces[ piece.parent.pieceIDMap[py][px-1] ].color != piece.color &&
+              piece.parent.pieces[ piece.parent.pieceIDMap[py][px-1] ].moveAmount == 1
+            ){
+              addMoveVisual(piece.parent,px-1,py+dir,2,piece.parent.pieces[ piece.parent.pieceIDMap[py][px-1] ]);
+            }else{
+              addMoveVisual(piece.parent,px-1,py+dir,0);
+            }
           }
         }
         
         //If it's the piece's first move, allow it to move one extra space forward
         if(piece.moveAmount == 0){
-          if(piece.parent.pieceTypeMap[ py+dir ][ px ] == 0 && piece.parent.pieceTypeMap[ py+dir*2 ][ px ] == 0){
+          if(piece.parent.pieceTypeMap[py+dir][px] == 0 && piece.parent.pieceTypeMap[py+dir*2][px] == 0){
             addMoveVisual(piece.parent,px,py+dir*2,1);
           }else{
             addMoveVisual(piece.parent,px,py+dir*2,0);
@@ -2060,7 +2011,7 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
       
       break;
     default:
-      console.warn("Warning: Attempted calculation of the moves of an invalid piece - "+piece.fullid);
+      console.warn("Warning: Attempted calculation of the moves of an invalid piece",piece);
   }
   
   return movementVisualCoords;
@@ -2134,10 +2085,11 @@ function checkForCheck(){
 
 //Check if the player is mated
 function checkForMate(){
-  document.getElementById("CheckMateBtn").disabled = true;
-  document.getElementById("CheckMateBtn").innerHTML = "Checking for mate...";
+  var CheckMateBtn = document.getElementById("CheckMateBtn");
+  CheckMateBtn.disabled = true;
+  CheckMateBtn.innerHTML = "Checking for mate...";
   
-  var t0 = performance.now();
+  ///var t0 = performance.now();
   
   function checkIfStillCheck(field,color){
     for(var t = 0;t < field.timelines.length;t += 1){
@@ -2208,21 +2160,9 @@ function checkForMate(){
                         throwError("An error occurred when trying to extend the timeline, please contact the system admin");
                       }
                     }else{
-                      //The extra code related to this variable is there to re-point "newboard1" to the new instance of its board if the timeline branches (and the other timelines are shifted down)
-                      var branched = (move[0].id < move[0].parent.boards.length-1);
-                      
                       //Create a new board and branch the timeline when a piece time travels
                       var newboard1 = testPiece.parent.extendTimeline();
                       var newboard2 = move[0].extendTimeline();
-                      
-                      //Check if the timeline branched off
-                      if(branched){
-                        //Check if the branched timeline was created above the rest
-                        if(move[0].turnColor != playerColor || (opponent == 1 && move[0].turnColor == 1)){
-                          //Re-point "newboard1" to its new instance
-                          newboard1 = newboard1.parent.parent.timelines[newboard1.tid+1].boards[newboard1.id];
-                        }
-                      }
                       
                       //Confirm that the new boards were successfully created
                       if(newboard1 != undefined && newboard2 != undefined){
@@ -2255,20 +2195,9 @@ function checkForMate(){
                       //Move the capturing piece to its new position
                       movePiece(newboard.pieces[testPiece.id],move[1],move[2]);
                     }else{
-                      var branched = (move[4].parent.id < move[4].parent.parent.boards.length-1);
-                      
                       //Extend both timelines
                       var newboard1 = testPiece.parent.extendTimeline();
                       var newboard2 = move[4].parent.extendTimeline();
-                      
-                      //Check if the timeline branched off
-                      if(branched){
-                        //Check if the branched timeline was created above the rest
-                        if(move[4].parent.turnColor != playerColor || (opponent == 1 && move[4].parent.turnColor == 1)){
-                          //Re-point "newboard1" to its new instance
-                          newboard1 = newboard1.parent.parent.timelines[newboard1.tid+1].boards[newboard1.id];
-                        }
-                      }
                       
                       //Make sure the new boards were created properly
                       if(newboard1 == undefined || newboard2 == undefined){
@@ -2289,9 +2218,9 @@ function checkForMate(){
                   
                   //Check if the king is still in check
                   if(!checkIfStillCheck(testField,king.color)){
-                    console.log("King is not mated");
-                    console.log(testPiece);
-                    console.log(move);
+                    ///console.log("King is not mated");
+                    ///console.log("King:",testPiece);
+                    ///console.log("Possible move:",move);
                     return true;
                   }
                 }
@@ -2315,16 +2244,20 @@ function checkForMate(){
           //Check that the piece exists and is a king
           if(piece != undefined && piece.type == 2){
             
+            var tp = performance.now();
+            
             //Use the "checkForPieceDanger" on each king
             var threateningPieces = checkForPieceDanger(piece,false);
             if(threateningPieces.length > 0){
               
               //For each king, check every move of every piece (essentially just bruteforce an answer), and if none of them get the king out of check, it's checkmate
-              if(!testForMoves(piece)){
-                console.log((piece.color == 0?"White":"Black")+" is mated");
-                console.log(piece);
-                console.log(threateningPieces);
-                ///alert((piece.color == 0?"White":"Black")+" is mated");
+              //Also check if the opponent can move the piece straight away (their turn). If so, it is obviously game over. Note: This will only occur if the player does not check for checkmate before they move.
+              if(threateningPieces[0].color == piece.parent.turnColor || !testForMoves(piece)){
+                console.log(performance.now() - tp,"ms");
+                
+                console.log((piece.color == 0?"White":"Black")+" is mated",piece);
+                console.log("Threat: ",threateningPieces);
+                alert((piece.color == 0?"White":"Black")+" could be in checkmate");
               }
             }
           }
@@ -2333,10 +2266,10 @@ function checkForMate(){
     }
   }
   
-  console.log(performance.now() - t0);
+  ///console.log(performance.now() - t0,"ms");
   
-  document.getElementById("CheckMateBtn").disabled = false;
-  document.getElementById("CheckMateBtn").innerHTML = "Check for Mate";
+  CheckMateBtn.disabled = false;
+  CheckMateBtn.innerHTML = "Check for Checkmate";
 }
 
 
@@ -2664,8 +2597,6 @@ socketOpen = false;
 //Request the amounts of moves from the server-side game and sync to/from the server accordingly
 function requestMoves(){
   serverBusy = true;
-  
-  console.log("Requesting moves");
   
   ///var requestTimeStart = performance.now();
   

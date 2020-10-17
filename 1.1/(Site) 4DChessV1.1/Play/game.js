@@ -36,7 +36,7 @@ const URLport = window.location.port;
 var serverBusy = false;
 
 //The URL used to contact the NodeJS server (If you are hosting this yourself, be sure to change the port to match)
-const nodeJSURL = URLdomain+":"+"8002"+"/4DChess/";
+const nodeJSURL = URLdomain+":"+"8002"+"/4DChessV1.1/";
 
 //The variable which will point to the WebSocket object used for online multiplayer
 var socket;
@@ -2265,7 +2265,7 @@ function checkForMate(){
   ///console.log(performance.now() - t0,"ms");
   
   CheckMateBtn.disabled = false;
-  CheckMateBtn.innerHTML = "Check for Mate";
+  CheckMateBtn.innerHTML = "Check for Checkmate";
 }
 
 

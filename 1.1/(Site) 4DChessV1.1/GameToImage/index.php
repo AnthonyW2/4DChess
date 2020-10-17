@@ -6,9 +6,6 @@ Anthony Wilson - 4D Chess
 -->
 
 <?php
-  //Set the cache-control header for the dev version of the page
-  header("Cache-Control: no-cache");
-  
   $gamedata = $_REQUEST["data"];
 ?>
 
