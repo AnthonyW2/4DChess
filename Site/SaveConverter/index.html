@@ -1,0 +1,52 @@
+<!--
+Anthony Wilson - 4D Chess
+
+2 November 2020
+2/11/20
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>4D Chess - Save converter</title>
+    <!--link rel="stylesheet" type="text/css" href="../style.css"-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+      body {
+        background-color: #303030;
+        color: #eeeeee;
+        font-family: Georgia;
+      }
+      
+      #SaveTextInput, #SaveTextOutput {
+        background-color: #202020;
+        color: #eeeeee;
+        
+        border: none;
+        
+        width: 95%;
+        height: 20em;
+        
+        font-family: monospace;
+        font-size: 12;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="Title">4D Chess save file converter</h1>
+    
+    <p>Import a game from JSON</p>
+    <input type="file" id="SaveFileInput">
+    <button class="MenuButton" onclick="convertSave()">Convert save file</button>
+    <button class="MenuButton" onclick="exportSave()">Download save file</button>
+    <br><br>
+    <textarea id="SaveTextInput" placeholder="Input JSON goes here"></textarea>
+    <textarea id="SaveTextOutput" placeholder="Output JSON goes here"></textarea>
+    
+    <a id="DownloadAnchor" href="" target="_blank" hidden style="display:none"></a>
+    
+    <script src="converter.js"></script>
+  </body>
+</html>

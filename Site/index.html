@@ -20,7 +20,7 @@ While the game concept is not completely mine, this entire site was written from
 
 See https://github.com/AnthonyW2/4DChess for the complete source code.
 
-Version: 1.1.0.25-0
+Version: 1.2.0.10-0
 -->
 
 <!DOCTYPE html>
@@ -43,7 +43,7 @@ Version: 1.1.0.25-0
     <meta property="og:title" content="4D Chess">
     <meta property="og:type" content="website">
     <!--meta property="og:url" content="http://101.188.168.172/4DChess/"-->
-    <meta property="og:image" content="/4DChess/OpenGraphicsImg.png">
+    <meta property="og:image" content="/4D/4DChess/OpenGraphicsImg.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="256">
     <meta property="og:image:height" content="256">
@@ -51,7 +51,7 @@ Version: 1.1.0.25-0
   </head>
   <body class="up1line">
     <h1>4 Dimensional Chess</h1>
-    <p>This is an open-source game heavily inspired by <a href="https://store.steampowered.com/app/1349230/5D_Chess_With_Multiverse_Time_Travel/">5D Chess With Multiverse Time Travel</a><br>This site is a work in progress, you can check out Release 1.0 <a href="../4DChessV1.0/">here</a>, or play the current version from this page (1.1.0 Build 22 [Unreleased])</p>
+    <p>This is an open-source game heavily inspired by <a href="https://store.steampowered.com/app/1349230/5D_Chess_With_Multiverse_Time_Travel/">5D Chess With Multiverse Time Travel</a><br>This site is a work in progress, you can check out Release 1.1 <a href="../4DChessV1.1/">here</a>, or play the current version from this page (1.2.0 Build 10 [Unreleased])</p>
     <p>Check out the source code for this site at <a href="https://github.com/AnthonyW2/4DChess">github.com/AnthonyW2/4DChess</a></p>
     
     <!--This is a container for the main menu that will get hidden & replaced by another container when a button is pressed.-->
@@ -59,6 +59,7 @@ Version: 1.1.0.25-0
       <h2>Main Menu</h2>
       <button class="MenuButton" id="VersusBtn" onclick="VersusBtn()">Play / Versus</button><br>
       <!--button class="MenuButton" id="PuzzlesBtn" onclick="PuzzlesBtn()">Puzzles</button><br-->
+      <button class="MenuButton" id="ConverterBtn" onclick="ConverterBtn()">Convert save</button><br>
       <button class="MenuButton" id="RulesBtn" onclick="RulesBtn()">How to Play</button><br>
       <button class="MenuButton" id="SettingsBtn" onclick="SettingsBtn()">Settings</button><br>
       <button class="MenuButton" id="CreditsBtn" onclick="CreditsBtn()">About / Credits</button>
@@ -82,14 +83,14 @@ Version: 1.1.0.25-0
           <label for="LayoutSelector">Choose starting layout:</label><br>
           <select class="MenuDropdown" name="LayoutSelector" id="LocalLayoutSelector">
             <option value="0">8x8 - Standard</option>
-            <option value="1">4x4 - King in the middle</option>
-            <option value="2">4x4 - King in the corner</option>
-            <option value="3">5x5 - Simple (All pieces)</option>
-            <option value="4">8x8 - Turn 0</option>
-            <option value="5">8x8 - Turn -1</option>
-            <option value="6">6x6 - Simple (All pieces)</option>
-            <option value="7">6x6 - Black bishops, white knights</option>
-            <option value="8">8x8 - Defended Pawn</option>
+            <option value="1">8x8 - Defended Pawn</option>
+            <option value="2">8x8 - Turn 0</option>
+            <option value="3">8x8 - Turn -1</option>
+            <option value="4">6x6 - Simple (All pieces)</option>
+            <option value="5">6x6 - Black bishops, white knights</option>
+            <option value="6">5x5 - Simple (All pieces)</option>
+            <option value="7">4x4 - King in the middle</option>
+            <option value="8">4x4 - King in the corner</option>
           </select>
           <br><br>
           <button class="MenuButton" id="LocalNewGameBtn" onclick="NewLocalGame()">New Game</button>
@@ -128,14 +129,14 @@ Version: 1.1.0.25-0
           <label for="LayoutSelector">Choose starting layout:</label><br>
           <select class="MenuDropdown" name="LayoutSelector" id="CreateOnlineLayoutSelector">
             <option value="0">8x8 - Standard</option>
-            <option value="1">4x4 - King in the middle</option>
-            <option value="2">4x4 - King in the corner</option>
-            <option value="3">5x5 - Simple (All pieces)</option>
-            <option value="4">8x8 - Turn 0</option>
-            <option value="5">8x8 - Turn -1</option>
-            <option value="6">6x6 - Simple (All pieces)</option>
-            <option value="7">6x6 - Black bishops, white knights</option>
-            <option value="8">8x8 - Defended Pawn</option>
+            <option value="1">8x8 - Defended Pawn</option>
+            <option value="2">8x8 - Turn 0</option>
+            <option value="3">8x8 - Turn -1</option>
+            <option value="4">6x6 - Simple (All pieces)</option>
+            <option value="5">6x6 - Black bishops, white knights</option>
+            <option value="6">5x5 - Simple (All pieces)</option>
+            <option value="7">4x4 - King in the middle</option>
+            <option value="8">4x4 - King in the corner</option>
           </select>
           <br><br>
           <div>

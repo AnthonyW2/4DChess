@@ -35,6 +35,10 @@ var boardOffset = 6;
 
 var canvas = document.getElementById("ImageCanvas");
 
+function createArrow(){
+  
+}
+
 function generateImage(){
   //Convert the JSON data to an object
   var obj = JSON.parse(gameData);
@@ -136,21 +140,19 @@ function generateImage(){
           }
           
           //Draw all the pieces
-          for(var p = 0;p < board.pieces.length;p += 1){
-            if(board.pieces[p] != undefined){
-              //Create an image element
-              var icon = document.createElement("img");
-              //Add the source of the image (preloaded by the hidden images on the page)
-              icon.src = pieceIconPaths[board.pieces[p].color][board.pieces[p].type];
-              //Draw the image to the canvas
-              ctx.drawImage(
-                icon,
-                b*(obj.boardWidth+1)*32+16+board.pieces[p].x*32,
-                t*(obj.boardHeight+1)*32+16+board.pieces[p].y*32,
-                32,
-                32
-              );
-            }
+          for(var p = 0;p < board.pieceXs.length;p += 1){
+            //Create an image element
+            var icon = document.createElement("img");
+            //Add the source of the image (preloaded by the hidden images on the page)
+            icon.src = pieceIconPaths[board.pieceColors[p]][board.pieceTypes[p]];
+            //Draw the image to the canvas
+            ctx.drawImage(
+              icon,
+              b*(obj.boardWidth+1)*32+16+board.pieceXs[p]*32,
+              t*(obj.boardHeight+1)*32+16+board.pieceYs[p]*32,
+              32,
+              32
+            );
           }
         }
       }
@@ -158,12 +160,17 @@ function generateImage(){
   }
   
   //Loop through all the past-movement visuals and render them as slightly transparent rectangles
-  for(var a = 0;a < obj.movementVisuals.length;a += 1){
+  for(var a = 0;a < obj.pastMoves.length;a += 1){
     ctx.fillStyle = "#ff00ff60";
-    /// This will change when gamestate layouts are changed [T,B,X,Y] -> [B,T,X,Y]
     ctx.fillRect(
-      obj.movementVisuals[a][1]*(obj.boardWidth+1)*32+16+obj.movementVisuals[a][2]*32,
-      obj.movementVisuals[a][0]*(obj.boardHeight+1)*32+16+obj.movementVisuals[a][3]*32,
+      obj.pastMoves[a][0]*(obj.boardWidth+1)*32+16+obj.pastMoves[a][2]*32,
+      obj.pastMoves[a][1]*(obj.boardHeight+1)*32+16+obj.pastMoves[a][3]*32,
+      32,
+      32
+    );
+    ctx.fillRect(
+      obj.pastMoves[a][4]*(obj.boardWidth+1)*32+16+obj.pastMoves[a][6]*32,
+      obj.pastMoves[a][5]*(obj.boardHeight+1)*32+16+obj.pastMoves[a][7]*32,
       32,
       32
     );

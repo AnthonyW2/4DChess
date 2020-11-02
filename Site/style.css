@@ -133,12 +133,14 @@ Z-Indexes for the game:
 
 20 - Piece
 
+40 - Past-move indicator arrows (SmallArrow)
+
 50 - Movement visuals (Available,Blocked,Capture)
 
 99 - Turn color mask (JS)
 100 - Title bar
 
-999 - "Import game" pop-up
+200 - "Import game" pop-up
 */
 
 
@@ -221,6 +223,11 @@ Z-Indexes for the game:
 .FieldTile {
   position: absolute;
   z-index: 6;
+  font-size: 1.5rem;
+  padding: 12px;
+  box-sizing: border-box;
+  text-align: center;
+  color: #505050;
 }
 
 
@@ -264,7 +271,7 @@ Z-Indexes for the game:
   opacity: 0.75;
 }
 
-/* The orange visuals indication a previous move */
+/* The transparent squares indicating a previous move */
 .PastMoveVisual {
   position: absolute;
   z-index: 17;
@@ -272,6 +279,12 @@ Z-Indexes for the game:
   opacity: 0.2;
   width: 32px;
   height: 32px;
+  pointer-events: none;
+}
+
+.SmallArrow {
+  position: absolute;
+  z-index: 40;
   pointer-events: none;
 }
 
@@ -289,7 +302,7 @@ Z-Indexes for the game:
 
 #ImportGamePopup {
   position: fixed;
-  z-index: 999;
+  z-index: 200;
   
   background-color: #303030;
   
@@ -316,7 +329,6 @@ Z-Indexes for the game:
   color: #eeeeee;
   
   border: none;
-  /*margin: auto;*/
   
   width: 90%;
   height: 50%;
@@ -329,7 +341,6 @@ Z-Indexes for the game:
 }
 
 #TitleBarUnhideButton {
-  /*position: absolute;*/
   position: fixed;
   z-index: 100;
   

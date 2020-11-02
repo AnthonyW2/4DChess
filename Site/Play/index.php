@@ -54,14 +54,14 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
   
   $layoutdesc = array(
     "8x8 - Standard",
-    "4x4 - King in the middle",
-    "4x4 - King in the corner",
-    "5x5 - Simple (All pieces)",
+    "8x8 - Defended Pawn",
     "8x8 - Turn 0",
     "8x8 - Turn -1",
     "6x6 - Simple (All pieces)",
     "6x6 - Black bishops, white knights",
-    "8x8 - Defended Pawn"
+    "5x5 - Simple (All pieces)",
+    "4x4 - King in the middle",
+    "4x4 - King in the corner"
   );
   
   $og_desc = "";
@@ -175,6 +175,15 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
     <form id="SaveImageForm" method="post" action="../GameToImage/" target="_blank" hidden style="display:none">
       <input type="hidden" name="data" value="">
     </form>
+    
+    <div hidden style="display:none">
+      <svg id="TimelineArrowheadSVG" width="64" height="128">
+        <polygon points="0,0 0,128 64,64" fill="#606060"></polygon>
+      </svg>
+      <svg id="SmallArrowheadSVG" width="16" height="32">
+        <polygon points="0,0 0,32 16,16" fill="#808080"></polygon>
+      </svg>
+    </div>
     
     <!-- Pass PHP variables directly to JavaScript -->
     <script>

@@ -4,11 +4,11 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 === TO DO ===
 - Change the way gamestates are stored:
-  > Change movement visuals to [B,T,X,Y] instead of [T,B,X,Y] (Reformat them altogether - [B0,T0,X0,Y0, B1,T1,X1,Y1, {Extra data}] - this allows for keeping track of moves and easily creating cross-time arrows)
-  > Store pieces as simple integer arrays, instead of large object strings
-  > Add arrows to indicate time-travel moves
-  > Add timeline "ancestor"s. This should be a simple integer, which is a RELATIVE reference to the timeline that the target timeline was created from.
-  > Add layout identifiers (useful for checking for castling)
+  * Add extra data section (For the future - custom castling rules - pawn double-first-move - En Passant)
+  * Change movement visuals to [B,T,X,Y] instead of [T,B,X,Y] (Reformat them altogether - [B0,T0,X0,Y0, B1,T1,X1,Y1, {Extra data}] - this allows for keeping track of moves and easily creating cross-time arrows) - also renamed to "pastMoves"
+  * Store pieces as simple integer arrays, instead of large object strings
+  * Add timeline "ancestor"s. This should be a simple integer, which is a RELATIVE reference to the timeline that the target timeline was created from.
+- Get rid of leftover code
 
 - Seperate the game.js file into "API" and "Game control"
 
@@ -24,6 +24,8 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 - Make pawn promotion give a choice of pieces
 
+- Add an option to view only white/black boards
+
 - Create a page for making custom layouts / editing saves
 - Add global and local game settings
 - Add "How to Play" and "Credits"
@@ -33,28 +35,14 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 - Add per-game chat for online multiplayer
 - Fix online multiplayer POV (specifically for Black)
 - Add a "spectate"/"view only" mode for online multiplayer
-- Use websockets for online multiplayer (hosted with NodeJS)
+- Add a NodeJS websocket option for online multiplayer, which will be used by default, with the fallback being PHP requests.
 
 - Add a save-conversion page:
   > My JSON format to Alexbay218's notation
   > My JSON format to Alexbay218's JSON format
   > Alexbay218's notation to my JSON format
 
-
-
-=== Roadmap ===
-~ 1  - Fix current online multiplayer bugs
-~ 2  - Implement branching timelines (that will round out all of the "5D" functionality)
-~ 3  - Add "toJSON()" & "fromJSON" functions (for sending / storing the game)
-~ 4  - Add "Undo" functionality and export/import game functionality
-~ 5  - Add time-travel moves for the rest of the pieces
-~ 6  - Rework online multiplayer (send games as JSON, store entire game on server, add server-side protection against attacks)
-~ 7  - First release (1.0.2.1-1)
-~ 8  - Add a way to detect check or checkmate.
- 9  > Create option to use websockets. Add move confirmation to online multiplayer.
-10 - Add global & local game settings
-11 - Add computer player functionality
-12 - Create clients written in multiple languages (Java, C#, C++)
+- Add more variants (Arimaa, Andernach Chess, Soveriegn Chess, etc.)
 
 
 
@@ -62,9 +50,9 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 [24/7/20] (0.0.0.1-0) - Project started
 
-[?/?/20]  (1.0.0.?-0) - First working build, with most 5D moves. New boards are created when pieces are moved, and new timelines when pieces time travel.
+[?/?/20] (1.0.0.?-0) - First working build, with most 5D moves. New boards are created when pieces are moved, and new timelines when pieces time travel.
 
-[?/?/20]  (1.0.1.?-0) - Online multiplayer functional, with no menus and no way to create games.
+[?/?/20] (1.0.1.?-0) - Online multiplayer functional, with no menus and no way to create games.
 
 [13/9/20] (1.0.2.1-1) - First release, including fully functional local multiplayer, online multiplayer, complete set of 5D Chess mechanics, importing/exporting game as JSON and much more. Roughly 3100 SLOC in total.
 
@@ -118,6 +106,35 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 [17/10/20] (1.1.0.25-0) - Fixed a small bug causing "The Present" indicator element to have the wrong width.
 
+[17/10/20] (1.1.0.25-1) - 1.1 Release. Roughly 3500 SLOC in total.
+
+[18/10/20] (1.2.0.1-0) - Added field grid coordinate text.
+
+[19/10/20] (1.2.0.2-0) - Minor edits (The Present is now updated when a game is imported. Changed the text displayed by the checkForCheck function. Changed the way color is used to interact with directional components of the game (white is always on the bottom now).
+
+[19/10/20] (1.2.0.3-0) - Changed the way pieces are stored in game save files (roughly 40% smaller on average).
+
+[20/10/20] (1.2.0.4-0) - Added function to create arrows pointing from one set of coords to another. Changed timeline arrow-tips to SVGs. Changed "Field.movementVisuals" variable name to "pastMoves".
+
+[20/10/20] (1.2.0.5-0) - "boardWidth" & "boardHeight" are no longer glabal variables, and are now Field attributes.
+
+[21/10/20] (-) - Changed 4D Chess directory path (planning for future variants). From /4DChess/ to /4D/4DChess/ and /4D/[Game name]/.
+
+[21/10/20] (1.2.0.6-0) - Minor tweaks and bug fixes.
+
+[21/10/20] (1.2.0.7-0) - Added timeline ancestors.
+
+[1/11/20] (1.2.0.8-0) - All special piece moves (castling, pawn double-move, En Passant) are now stored in extraGameData (the "data" attribute of JSON saves).
+
+[1/11/20] (1.2.0.9-0) - Fixed a bug which occurs when the position of a captured piece is different to the new position of the capturing piece (such as En Passant) (board.pieceIDmap and board.pieceTypeMap were incorrectly updated).
+
+[1/11/20] (1.2.0.10-0) - Replaced "fields" array with a single "playField" variable.
+
+[2/11/20] (1.2.0.11-0) - Updated the image generation page for the new save file format.
+
+[3/11/20] (1.2.0.12-0) - Created a save file conversion page (from 1.1 to 1.2). Removed the "active" timeline attribute from JSON saves.
 
 
-[] (1.1.#.#-1) - Added a NodeJS websocket option for online multiplayer, which will be used by default, with the fallback being PHP requests.
+
+
+

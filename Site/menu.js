@@ -27,6 +27,11 @@ function PuzzlesBtn(){
   alert("[Placeholder]\nThere's nothing here yet");
 }
 
+//Button that changes the layout to the Versus menu
+function ConverterBtn(){
+  window.location.href = "SaveConverter/";
+}
+
 //Button that changes the layout to the Rules page
 function RulesBtn(){
   document.getElementById("MainMenu").hidden = true;
