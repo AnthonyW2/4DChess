@@ -4,7 +4,7 @@ Anthony Wilson
 Protected by the GNU General Public License V3
 
 24 July 2020
-24/7/20
+20-7-24
 
 This is not a full clone of the game "5D Chess With Multiverse Time Travel" on Steam, but simply a game that is heavily inspired by it.
 While the game concept is not completely mine, this entire site was written from the ground up, so the code is entirely owned by me.
@@ -48,7 +48,7 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
   
   $layout = $_REQUEST["l"];
   //$layout can contain the values 0 - 4
-  if(!isset($layout) || $layout == "" || !($layout >= 0 && $layout <= 8)){
+  if(!isset($layout) || $layout == "" || !($layout >= 0 && $layout <= 9)){
     $layout = 0;
   }
   
@@ -61,7 +61,8 @@ See https://github.com/AnthonyW2/4DChess for the complete source code. (./game.j
     "6x6 - Black bishops, white knights",
     "5x5 - Simple (All pieces)",
     "4x4 - King in the middle",
-    "4x4 - King in the corner"
+    "4x4 - King in the corner",
+    "8x8 - F7-Sac Counter"
   );
   
   $og_desc = "";

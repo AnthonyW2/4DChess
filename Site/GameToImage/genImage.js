@@ -35,10 +35,6 @@ var boardOffset = 6;
 
 var canvas = document.getElementById("ImageCanvas");
 
-function createArrow(){
-  
-}
-
 function generateImage(){
   //Convert the JSON data to an object
   var obj = JSON.parse(gameData);
@@ -56,6 +52,30 @@ function generateImage(){
   canvas.width = (obj.boardWidth+1)*64*Math.ceil((fieldwidth+1)/2);
   
   var ctx = canvas.getContext("2d");
+  
+  //Create an arrow pointing from one location to another
+  function createArrow(x1,y1,x2,y2,color = "#808080"){
+    var angle = (Math.atan2(y1-y2,x1-x2)+Math.PI)%(Math.PI*2);
+    var x3 = Math.sin(angle+Math.PI/2)*8;
+    var y3 = -Math.cos(angle+Math.PI/2)*8;
+    
+    ctx.beginPath();
+    ctx.moveTo(x1-x3,y1-y3);
+    ctx.lineTo(x2-x3+x3/8,y2-y3+y3/8);
+    ctx.closePath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(x2-x3,y2-y3);
+    ctx.lineTo(x2-x3+Math.sin(angle)*16,y2-y3-Math.cos(angle)*16);
+    ctx.lineTo(x2-x3+Math.sin(angle+Math.PI/2)*16,y2-y3-Math.cos(angle+Math.PI/2)*16);
+    ctx.lineTo(x2-x3+Math.sin(angle+Math.PI)*16,y2-y3-Math.cos(angle+Math.PI)*16);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
   
   //Create the field grid
   for(var a = 0;a < Math.ceil((fieldwidth+1)/2);a += 1){
@@ -83,6 +103,7 @@ function generateImage(){
         }
       }
       ctx.fillStyle = "#606060";
+      ctx.beginPath();
       //Draw the timeline line
       ctx.fillRect(
         nullBoards*(obj.boardWidth+1)*32,
@@ -103,6 +124,7 @@ function generateImage(){
         (obj.timelines[t].boards.length*(obj.boardWidth+1)*32)+16,
         t*(obj.boardHeight+1)*32+obj.boardHeight*16+80
       );
+      ctx.closePath();
       ctx.fill();
       for(var b = 0;b < obj.timelines[t].boards.length;b += 1){
         var board = obj.timelines[t].boards[b];
@@ -174,6 +196,16 @@ function generateImage(){
       32,
       32
     );
+    
+    if(obj.pastMoves[a][0] != obj.pastMoves[a][4] || obj.pastMoves[a][1] != obj.pastMoves[a][5]){
+      createArrow(
+        (obj.boardWidth+1)*32*obj.pastMoves[a][0]+obj.pastMoves[a][2]*32+16+16,
+        (obj.boardHeight+1)*32*obj.pastMoves[a][1]+obj.pastMoves[a][3]*32+16+16,
+        (obj.boardWidth+1)*32*obj.pastMoves[a][4]+obj.pastMoves[a][6]*32+16+16,
+        (obj.boardHeight+1)*32*obj.pastMoves[a][5]+obj.pastMoves[a][7]*32+16+16,
+        "#902090"
+      );
+    }
   }
   
   document.getElementById("Title").innerHTML = "Finished generating image";

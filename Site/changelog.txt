@@ -3,18 +3,11 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 
 
 === TO DO ===
-- Change the way gamestates are stored:
-  * Add extra data section (For the future - custom castling rules - pawn double-first-move - En Passant)
-  * Change movement visuals to [B,T,X,Y] instead of [T,B,X,Y] (Reformat them altogether - [B0,T0,X0,Y0, B1,T1,X1,Y1, {Extra data}] - this allows for keeping track of moves and easily creating cross-time arrows) - also renamed to "pastMoves"
-  * Store pieces as simple integer arrays, instead of large object strings
-  * Add timeline "ancestor"s. This should be a simple integer, which is a RELATIVE reference to the timeline that the target timeline was created from.
-- Get rid of leftover code
+- Add piece which cannot move. Replace 'Master' piece.
 
 - Seperate the game.js file into "API" and "Game control"
 
-- Change the field class constructor - create a field straight from a simplified object
-
-- Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness) (Will require gamestate change)
+- Add timeline branch visuals (the elements will need to be contained by the field element because of z-index weirdness) (use timeline ancestor)
 - Use SVGs for the piece sprites
 - Change Import/Export game menu - looks horrible at the moment
 - Add icons to the buttons
@@ -29,13 +22,13 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 - Create a page for making custom layouts / editing saves
 - Add global and local game settings
 - Add "How to Play" and "Credits"
-- Add chess clock (options in global settings)
+- Add chess clock (options in extra data)
 
 - Add move confirmation to online multiplayer
-- Add per-game chat for online multiplayer
-- Fix online multiplayer POV (specifically for Black)
 - Add a "spectate"/"view only" mode for online multiplayer
 - Add a NodeJS websocket option for online multiplayer, which will be used by default, with the fallback being PHP requests.
+
+- Flip perspective when playing as black
 
 - Add a save-conversion page:
   > My JSON format to Alexbay218's notation
@@ -133,6 +126,12 @@ Changelog for Anthony Wilson's 4 Dimensional Chess
 [2/11/20] (1.2.0.11-0) - Updated the image generation page for the new save file format.
 
 [3/11/20] (1.2.0.12-0) - Created a save file conversion page (from 1.1 to 1.2). Removed the "active" timeline attribute from JSON saves.
+
+[3/11/20] (1.2.0.13-0) - Field objects can now be created straight from a simplified object (by supplying it as the second parameter of the constructor)
+
+[3/11/20] (1.2.0.14-0) - Added the time-travel indicator arrows to the image generator.
+
+[28/11/20] (1.2.0.15-0) - Change piece type 1 from 'Master' piece to a piece which cannot move ('Stationary' piece). Added layout which counters F7-sac by replacing the F7 and F2 pawns with a 'Stationary' piece.
 
 
 

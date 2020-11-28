@@ -4,22 +4,22 @@
 
 // Project Started:
 //24 July 2020
-//24/7/20
+//20-7-24
 
 // 1.0 Release:
 //13 September 2020
-//13/9/20
+//20-9-13
 
 // 1.1 Release:
 //17 October 2020
-//17/10/20
+//20-10-17
 
 
 
 "use strict";
 
 // (Maj Version).(Min Version).(Patch).(Build)-(Release)
-const version = "1.2.0.12-0";
+const version = "1.2.0.15-0";
 
 
 
@@ -86,25 +86,25 @@ const boardOffset = 6; //px
 
 //The names of all the pieces
 const pieceNames = [
-  "",         // 0
-  "Master",   // 1
-  "King",     // 2
-  "Queen",    // 3
-  "Bishop",   // 4
-  "Knight",   // 5
-  "Rook",     // 6
-  "Pawn",     // 7
-  "Unicorn",  // 8
-  "Dragon",   // 9
-  "Princess", // 10
-  "Brawn"     // 11
+  "",           // 0
+  "Stationary", // 1
+  "King",       // 2
+  "Queen",      // 3
+  "Bishop",     // 4
+  "Knight",     // 5
+  "Rook",       // 6
+  "Pawn",       // 7
+  "Unicorn",    // 8
+  "Dragon",     // 9
+  "Princess",   // 10
+  "Brawn"       // 11
 ];
 
 //The icon paths of all the pieces
 const pieceIconPaths = [
   [ // White pieces
     "",
-    "../Resources/Pieces/64px/MasterW.png",
+    "../Resources/Pieces/64px/StationaryW.png",
     "../Resources/Pieces/64px/KingW.png",
     "../Resources/Pieces/64px/QueenW.png",
     "../Resources/Pieces/64px/BishopW.png",
@@ -118,7 +118,7 @@ const pieceIconPaths = [
   ],
   [ // Black pieces
     "",
-    "../Resources/Pieces/64px/MasterB.png",
+    "../Resources/Pieces/64px/StationaryB.png",
     "../Resources/Pieces/64px/KingB.png",
     "../Resources/Pieces/64px/QueenB.png",
     "../Resources/Pieces/64px/BishopB.png",
@@ -145,7 +145,7 @@ var SVGs = [
 //The main "Field" that contains all the other objects (boards, timelines, etc)
 class Field{
   //id = FieldID
-  constructor(id,render = true){
+  constructor(id,simpleObj = undefined,render = true){
     this.id = id;
     this.timelines = [];
     
@@ -178,11 +178,16 @@ class Field{
       this.presentLine.style.width = (this.boardWidth/2)*32+"px";
       this.container.appendChild(this.presentLine);
     }
+    
+    if(simpleObj != undefined && typeof(simpleObj) == "object"){
+      this.fromSimpleObject(simpleObj);
+    }
   }
   
   //Safely clone the current object and all child objects
   clone(cloneid,render = true){
-    var clonedField = new Field(cloneid,render);
+    var t0 = performance.now();
+    var clonedField = new Field(cloneid,undefined,render);
     for(var a = 0;a < this.timelines.length;a += 1){
       if(this.timelines[a] != undefined){
         this.timelines[a].clone(clonedField,a,render);
@@ -191,6 +196,11 @@ class Field{
     if(render){
       clonedField.render();
     }
+    
+    //According to my testing, simplifying the field and then creating a new one from that object is significantly slower (by nearly 20% on average) than cloning everything in one go.
+    //var clonedField = new Field(cloneid,this.simplify(),render);
+    
+    console.log("Clone Field funcion time: ",performance.now() - t0);
     return clonedField;
   }
   
@@ -1283,8 +1293,6 @@ function addMoveVisuals(piece,moves){
         storePastMove();
         
         //Add the visuals indicating a previous move
-        ///piece.parent.parent.parent.addPastMoveVisual(piece.tid,piece.bid,piece.getX(),piece.getY());
-        ///move[0].parent.parent.addPastMoveVisual(move[0].tid,move[0].id,move[1],move[2]);
         piece.parent.parent.parent.addPastMoveVisual(
           piece.bid,piece.tid,piece.getX(),piece.getY(),
           move[0].id,move[0].tid,move[1],move[2]
@@ -1487,24 +1495,24 @@ function getAvailableMoves(piece,includeBlocked = true,typeOverride = undefined)
   //Check for the type of piece, and add movement visuals depending on how the piece moves
   switch(pieceType){
     case 1:
-      //The Master piece can move anywhere on any board (It's used for debugging purposes, but could also be used as a custom piece, as long as the players manually keep track of where it can move)
+      //The Stationary piece cannot move anywhere
       
-      //Loop through all the timelines
-      for(var t = 0;t < playField.timelines.length;t += 1){
-        //Loop through all the boards
-        for(var b = 0;b < playField.timelines[t].boards.length;b += 1){
-          if(playField.timelines[t].boards[b] != undefined){
-            var board = playField.timelines[t].boards[b];
-            //Loop through all tiles of each board
-            for(var x = 0;x < piece.parent.parent.parent.boardWidth;x += 1){
-              for(var y = 0;y < piece.parent.parent.parent.boardHeight;y += 1){
-                //Let the function detect which type of visual should be used (available move, blocked move, or capture)
-                addMoveVisual(board,x,y);
-              }
-            }
-          }
-        }
-      }
+      //Allow the piece to move anywhere for debugging purposes
+      ///for(var t = 0;t < playField.timelines.length;t += 1){
+      ///  //Loop through all the boards
+      ///  for(var b = 0;b < playField.timelines[t].boards.length;b += 1){
+      ///    if(playField.timelines[t].boards[b] != undefined){
+      ///      var board = playField.timelines[t].boards[b];
+      ///      //Loop through all tiles of each board
+      ///      for(var x = 0;x < piece.parent.parent.parent.boardWidth;x += 1){
+      ///        for(var y = 0;y < piece.parent.parent.parent.boardHeight;y += 1){
+      ///          //Let the function detect which type of visual should be used (available move, blocked move, or capture)
+      ///          addMoveVisual(board,x,y);
+      ///        }
+      ///      }
+      ///    }
+      ///  }
+      ///}
       
       break;
     case 2:
@@ -2344,10 +2352,8 @@ function newGame(layout = 0){
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function(){
     if(this.readyState == 4 && this.status == 200){
-      //Create a new Field with ID 0
-      playField = new Field(0);
-      
-      playField.fromSimpleObject(JSON.parse(this.responseText));
+      //Create a new Field with ID 0 from the simplified object in the JSON layout file
+      playField = new Field(0,JSON.parse(this.responseText));
       
       if(opponent == 1){
         //Perform any syncing to/from the server that is required
@@ -2362,18 +2368,6 @@ function newGame(layout = 0){
   };
   xmlhttp.open("GET","Layouts/"+layout+".json",true);
   xmlhttp.send();
-  
-  ///// Create a new Field with ID 0
-  ///playField = new Field(0);
-  ///
-  ///// Create a new timeline with ID 0
-  ///var startingTimeline = playField.addTimeline(0);
-  ///
-  ///var startingBoard = startingTimeline.addBoard(0);
-  ///startingBoard.setSelectable(true);
-  ///startingBoard.setStartingLayout();
-  ///
-  ///playField.render();
 }
 
 //Delete the old game and create a new one [DEBUG]
@@ -2426,8 +2420,7 @@ function undoMove(){
   }
   
   playField.container.remove();
-  playField = new Field(0);
-  playField.fromSimpleObject(pastMoveObj);
+  playField = new Field(0,pastMoveObj);
   playField.updatePresentPosition();
   
   //Send the game to the server
@@ -2584,8 +2577,8 @@ function exportGame(){
   var simplified = playField.simplify();
   
   //Store the the JSON text in a URI encoded 
-  var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified,null,2));
-  ///var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified)); //Compressed format (no newlines, no extra spaces)
+  ///var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified,null,2));
+  var dataString = "data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(simplified)); //Compressed format (no newlines, no extra spaces)
   
   //Get the download anchor element
   var downloadAnchor = document.getElementById("DownloadAnchor");
@@ -2627,10 +2620,8 @@ function importGame(){
     
     //Remove the contents of the current game
     playField.container.remove();
-    //Create a new filed
-    playField = new Field(0);
-    //Recreate the new field from the imported JSON data
-    playField.fromSimpleObject(importedObject);
+    //Create a new filed from the imported JSON data
+    playField = new Field(0,importedObject);
     
     playField.updatePresentPosition();
     
@@ -2799,10 +2790,8 @@ function syncGameFromServer(){
         
         //Remove the contents of the current game
         playField.container.remove();
-        //Create a new filed
-        playField = new Field(0);
-        //Recreate the new field from the imported JSON data
-        playField.fromSimpleObject(serverObject);
+        //Create a new field from the imported JSON data
+        playField = new Field(0,serverObject);
         
         playField.updatePresentPosition();
         
